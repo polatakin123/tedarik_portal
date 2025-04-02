@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sifre = $_POST['sifre'] ?? '';
     
     if ($kullanici_adi && $sifre) {
-        $stmt = $db->prepare("SELECT id, kullanici_adi, sifre, ad_soyad, rol FROM kullanicilar WHERE kullanici_adi = ? AND aktif = 1");
+        $stmt = $db->prepare("SELECT id, kullanici_adi, sifre, ad_soyad, rol FROM kullanicilar WHERE kullanici_adi = ?");
         $stmt->execute([$kullanici_adi]);
         
         if ($kullanici = $stmt->fetch(PDO::FETCH_ASSOC)) {

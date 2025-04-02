@@ -6,11 +6,36 @@ tedarikciYetkisiKontrol();
 // Tedarikçi bilgilerini al
 $kullanici_id = $_SESSION['kullanici_id'];
 $tedarikci_sql = "SELECT t.* FROM tedarikciler t 
-                 INNER JOIN kullanicilar k ON t.id = k.firma_id 
-                 WHERE k.id = ? AND t.aktif = 1";
+                 WHERE t.id = (SELECT tedarikci_id FROM kullanici_tedarikci_iliskileri WHERE kullanici_id = ?)";
 $tedarikci_stmt = $db->prepare($tedarikci_sql);
 $tedarikci_stmt->execute([$kullanici_id]);
 $tedarikci = $tedarikci_stmt->fetch(PDO::FETCH_ASSOC);
+
+// Eğer kullanıcı_tedarikci_iliskileri tablosu yoksa, kullanıcı rolünden tedarikçi bilgilerini al
+if (!$tedarikci) {
+    // Alternatif sorgu - direkt kullanıcı ID'sine göre tedarikçi bul (eğer standart isimler kullanılıyorsa)
+    $tedarikci_sql = "SELECT t.* FROM tedarikciler t
+                    INNER JOIN kullanicilar k ON t.email = k.email
+                    WHERE k.id = ?";
+    $tedarikci_stmt = $db->prepare($tedarikci_sql);
+    $tedarikci_stmt->execute([$kullanici_id]);
+    $tedarikci = $tedarikci_stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// Yine bulamazsak kullanıcı adını kontrol edelim 
+if (!$tedarikci) {
+    $kullanici_sql = "SELECT * FROM kullanicilar WHERE id = ?";
+    $kullanici_stmt = $db->prepare($kullanici_sql);
+    $kullanici_stmt->execute([$kullanici_id]);
+    $kullanici = $kullanici_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($kullanici) {
+        $tedarikci_sql = "SELECT * FROM tedarikciler WHERE email = ? OR firma_adi LIKE ?";
+        $tedarikci_stmt = $db->prepare($tedarikci_sql);
+        $tedarikci_stmt->execute([$kullanici['email'], '%' . $kullanici['ad_soyad'] . '%']);
+        $tedarikci = $tedarikci_stmt->fetch(PDO::FETCH_ASSOC);
+    }
+}
 
 if (!$tedarikci) {
     // Bu kullanıcı için tedarikçi kaydı bulunamadı
@@ -74,7 +99,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
 $sorumlular_sql = "SELECT k.id, k.ad_soyad, k.email, k.telefon 
                   FROM kullanicilar k
                   INNER JOIN sorumluluklar s ON k.id = s.sorumlu_id
-                  WHERE s.tedarikci_id = ? AND k.aktif = 1";
+                  WHERE s.tedarikci_id = ?";
 $sorumlular_stmt = $db->prepare($sorumlular_sql);
 $sorumlular_stmt->execute([$tedarikci_id]);
 $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -98,6 +123,7 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #1cc88a;
             transition: all 0.3s;
+            width: 250px;
         }
         .sidebar-sticky {
             position: relative;
@@ -126,6 +152,7 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
         main {
             margin-left: 250px;
             padding: 2rem;
+            padding-top: 70px;
             transition: all 0.3s;
         }
         .navbar {
@@ -137,6 +164,7 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
             background-color: #fff !important;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             transition: all 0.3s;
+            height: 60px;
         }
         .card {
             border: none;

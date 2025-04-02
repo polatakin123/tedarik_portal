@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS kullanicilar (
     email VARCHAR(100) NOT NULL,
     telefon VARCHAR(20),
     rol ENUM('Admin', 'Sorumlu', 'Tedarikci') NOT NULL DEFAULT 'Tedarikci',
+    firma_id INT NULL,
     aktif BOOLEAN NOT NULL DEFAULT TRUE,
     son_giris DATETIME,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP
+    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX (firma_id)
 );
 
 -- Projeler tablosu
@@ -154,6 +156,26 @@ CREATE TABLE IF NOT EXISTS bildirimler (
     FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id),
     FOREIGN KEY (ilgili_siparis_id) REFERENCES siparisler(id)
 );
+
+-- Kullanıcı-Tedarikçi ilişkileri tablosu (tedarikçi kullanıcıların hangi tedarikçi firmalara ait olduğunu belirtir)
+CREATE TABLE IF NOT EXISTS kullanici_tedarikci_iliskileri (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    kullanici_id INT NOT NULL,
+    tedarikci_id INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY kullanici_tedarikci (kullanici_id, tedarikci_id),
+    INDEX (kullanici_id),
+    INDEX (tedarikci_id),
+    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id),
+    FOREIGN KEY (tedarikci_id) REFERENCES tedarikciler(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+-- Tedarikçi kullanıcılarını uygun tedarikçi firmalara bağla
+INSERT IGNORE INTO kullanici_tedarikci_iliskileri (kullanici_id, tedarikci_id)
+SELECT k.id, t.id
+FROM kullanicilar k
+INNER JOIN tedarikciler t ON t.id = k.firma_id
+WHERE k.rol = 'Tedarikci' AND k.firma_id IS NOT NULL;
 
 -- Örnek veriler
 -- Örnek sipariş durumları

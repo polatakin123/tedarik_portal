@@ -1,6 +1,7 @@
 <?php
 // sifre_degistir.php - Şifre değiştirme sayfası
 require_once 'config.php';
+
 girisKontrol();
 
 $mesaj = '';
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($kullanici && password_verify($mevcut_sifre, $kullanici['sifre'])) {
             // Yeni şifreyi hashle
-            
+            $hash_sifre = password_hash($yeni_sifre, PASSWORD_DEFAULT);
             
             // Şifreyi güncelle
             $sql = "UPDATE kullanicilar SET sifre = ? WHERE id = ?";

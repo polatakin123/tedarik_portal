@@ -15,19 +15,19 @@ $siparisler_stmt->execute();
 $siparisler_istatistik = $siparisler_stmt->fetch(PDO::FETCH_ASSOC);
 
 // Tedarikçi sayısı
-$tedarikciler_sql = "SELECT COUNT(*) as toplam FROM tedarikciler WHERE aktif = 1";
+$tedarikciler_sql = "SELECT COUNT(*) as toplam FROM tedarikciler";
 $tedarikciler_stmt = $db->prepare($tedarikciler_sql);
 $tedarikciler_stmt->execute();
 $tedarikci_sayisi = $tedarikciler_stmt->fetch(PDO::FETCH_ASSOC)['toplam'];
 
 // Sorumlu sayısı
-$sorumlular_sql = "SELECT COUNT(*) as toplam FROM kullanicilar WHERE rol = 'Sorumlu' AND aktif = 1";
+$sorumlular_sql = "SELECT COUNT(*) as toplam FROM kullanicilar WHERE rol = 'Sorumlu'";
 $sorumlular_stmt = $db->prepare($sorumlular_sql);
 $sorumlular_stmt->execute();
 $sorumlu_sayisi = $sorumlular_stmt->fetch(PDO::FETCH_ASSOC)['toplam'];
 
 // Proje sayısı
-$projeler_sql = "SELECT COUNT(*) as toplam FROM projeler WHERE aktif = 1";
+$projeler_sql = "SELECT COUNT(*) as toplam FROM projeler";
 $projeler_stmt = $db->prepare($projeler_sql);
 $projeler_stmt->execute();
 $proje_sayisi = $projeler_stmt->fetch(PDO::FETCH_ASSOC)['toplam'];
@@ -93,6 +93,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #4e73df;
             transition: all 0.3s;
+            width: 250px;
         }
         .sidebar-sticky {
             position: relative;
@@ -121,6 +122,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
         main {
             margin-left: 250px;
             padding: 2rem;
+            padding-top: 70px;
             transition: all 0.3s;
         }
         .navbar {
@@ -132,6 +134,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
             background-color: #fff !important;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             transition: all 0.3s;
+            height: 60px;
         }
         .card {
             border: none;

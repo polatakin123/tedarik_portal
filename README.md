@@ -15,7 +15,7 @@ Bu proje, savunma sanayii için geliştirilmiş bir tedarikçi ve sipariş yöne
 
 1. Projeyi bilgisayarınıza klonlayın:
 ```bash
-git clone https://github.com/kullaniciadi/tedarik-portal.git
+git clone https://github.com/polatakin123/tedarik_portal.git
 ```
 
 2. `config.php.example` dosyasını `config.php` olarak kopyalayın ve düzenleyin:
@@ -53,4 +53,4 @@ Projeyi geliştirmek için:
 
 ## Lisans
 
-Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır. 
+Bu proje [MIT Lisansı](LICENSE) altında lisanslanmıştır.

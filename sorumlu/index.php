@@ -3,61 +3,85 @@
 require_once '../config.php';
 sorumluYetkisiKontrol();
 
-// Kullanıcının sorumlu olduğu tedarikçileri al
 $sorumlu_id = $_SESSION['kullanici_id'];
-$tedarikciler_sql = "SELECT t.id, t.firma_adi, t.firma_kodu
+
+// Sipariş özeti
+$siparis_ozet_sql = "SELECT 
+                     COUNT(CASE WHEN durum_id = 1 THEN 1 END) as acik_siparis,
+                     COUNT(CASE WHEN durum_id = 2 THEN 1 END) as kapali_siparis,
+                     COUNT(CASE WHEN durum_id = 3 THEN 1 END) as bekleyen_siparis,
+                     COUNT(*) as toplam_siparis
+                     FROM siparisler
+                     WHERE sorumlu_id = ? OR tedarikci_id IN (
+                         SELECT tedarikci_id FROM sorumluluklar WHERE sorumlu_id = ?
+                     )";
+$siparis_ozet_stmt = $db->prepare($siparis_ozet_sql);
+$siparis_ozet_stmt->execute([$sorumlu_id, $sorumlu_id]);
+$siparis_ozet = $siparis_ozet_stmt->fetch(PDO::FETCH_ASSOC);
+
+// Son siparişler
+$son_siparisler_sql = "SELECT s.*, sd.durum_adi, p.proje_adi, t.firma_adi
+                       FROM siparisler s
+                       LEFT JOIN siparis_durumlari sd ON s.durum_id = sd.id
+                       LEFT JOIN projeler p ON s.proje_id = p.id
+                       LEFT JOIN tedarikciler t ON s.tedarikci_id = t.id
+                       WHERE s.sorumlu_id = ? OR s.tedarikci_id IN (
+                           SELECT tedarikci_id FROM sorumluluklar WHERE sorumlu_id = ?
+                       )
+                       ORDER BY s.acilis_tarihi DESC
+                       LIMIT 5";
+$son_siparisler_stmt = $db->prepare($son_siparisler_sql);
+$son_siparisler_stmt->execute([$sorumlu_id, $sorumlu_id]);
+$son_siparisler = $son_siparisler_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Tedarikçi sayısı
+$tedarikci_sayisi_sql = "SELECT COUNT(*) as sayi FROM sorumluluklar WHERE sorumlu_id = ?";
+$tedarikci_sayisi_stmt = $db->prepare($tedarikci_sayisi_sql);
+$tedarikci_sayisi_stmt->execute([$sorumlu_id]);
+$tedarikci_sayisi = $tedarikci_sayisi_stmt->fetch(PDO::FETCH_ASSOC)['sayi'];
+
+// Tedarikçi listesi
+$tedarikciler_sql = "SELECT t.*, COUNT(s.id) as siparis_sayisi
                     FROM tedarikciler t
-                    INNER JOIN sorumluluklar s ON t.id = s.tedarikci_id
-                    WHERE s.sorumlu_id = ? AND t.aktif = 1
-                    ORDER BY t.firma_adi";
+                    LEFT JOIN siparisler s ON t.id = s.tedarikci_id
+                    INNER JOIN sorumluluklar sr ON t.id = sr.tedarikci_id
+                    WHERE sr.sorumlu_id = ?
+                    GROUP BY t.id
+                    ORDER BY siparis_sayisi DESC
+                    LIMIT 5";
 $tedarikciler_stmt = $db->prepare($tedarikciler_sql);
 $tedarikciler_stmt->execute([$sorumlu_id]);
 $tedarikciler = $tedarikciler_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Sorumlu olunan tedarikçi sayısı
-$tedarikci_sayisi = count($tedarikciler);
-
-// Tedarikçilerin sipariş istatistikleri
-$siparisler_sql = "SELECT COUNT(*) as toplam, 
-                  SUM(CASE WHEN durum_id = 1 THEN 1 ELSE 0 END) as acik,
-                  SUM(CASE WHEN durum_id = 2 THEN 1 ELSE 0 END) as kapali,
-                  SUM(CASE WHEN durum_id = 3 THEN 1 ELSE 0 END) as beklemede
-                  FROM siparisler
-                  WHERE sorumlu_id = ?";
-$siparisler_stmt = $db->prepare($siparisler_sql);
-$siparisler_stmt->execute([$sorumlu_id]);
-$siparisler_istatistik = $siparisler_stmt->fetch(PDO::FETCH_ASSOC);
-
-// Son siparişler
-$in  = str_repeat('?,', count($tedarikciler) - 1) . '?';
-$tedarikci_idleri = array_column($tedarikciler, 'id');
-
-$son_siparisler_sql = "SELECT s.*, sd.durum_adi, p.proje_adi, t.firma_adi
-                      FROM siparisler s
-                      LEFT JOIN siparis_durumlari sd ON s.durum_id = sd.id
-                      LEFT JOIN projeler p ON s.proje_id = p.id
-                      LEFT JOIN tedarikciler t ON s.tedarikci_id = t.id
-                      WHERE s.tedarikci_id IN ($in) OR s.sorumlu_id = ?
-                      ORDER BY s.olusturma_tarihi DESC
-                      LIMIT 10";
-
-// Parametreleri birleştir
-$params = array_merge($tedarikci_idleri, [$sorumlu_id]);
-$son_siparisler_stmt = $db->prepare($son_siparisler_sql);
-$son_siparisler_stmt->execute($params);
-$son_siparisler = $son_siparisler_stmt->fetchAll(PDO::FETCH_ASSOC);
-
 // Son bildirimler
-$bildirimler_sql = "SELECT b.*, s.siparis_no
+$bildirimler_sql = "SELECT b.*, k.ad_soyad as gonderen_adi
                    FROM bildirimler b
-                   LEFT JOIN siparisler s ON b.ilgili_siparis_id = s.id
-                   WHERE b.kullanici_id = ? AND b.okundu = 0
+                   LEFT JOIN kullanicilar k ON b.gonderen_id = k.id
+                   WHERE b.kullanici_id = ?
                    ORDER BY b.bildirim_tarihi DESC
                    LIMIT 5";
 $bildirimler_stmt = $db->prepare($bildirimler_sql);
 $bildirimler_stmt->execute([$sorumlu_id]);
 $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Yaklaşan teslim tarihleri
+$yaklasan_teslimatlar_sql = "SELECT s.*, t.firma_adi, p.proje_adi
+                            FROM siparisler s
+                            LEFT JOIN tedarikciler t ON s.tedarikci_id = t.id
+                            LEFT JOIN projeler p ON s.proje_id = p.id
+                            WHERE (s.sorumlu_id = ? OR s.tedarikci_id IN (
+                                SELECT tedarikci_id FROM sorumluluklar WHERE sorumlu_id = ?
+                            ))
+                            AND s.durum_id = 1
+                            AND s.tedarikci_tarihi IS NOT NULL
+                            AND s.tedarikci_tarihi BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
+                            ORDER BY s.tedarikci_tarihi ASC
+                            LIMIT 5";
+$yaklasan_teslimatlar_stmt = $db->prepare($yaklasan_teslimatlar_sql);
+$yaklasan_teslimatlar_stmt->execute([$sorumlu_id, $sorumlu_id]);
+$yaklasan_teslimatlar = $yaklasan_teslimatlar_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Okunmamış bildirim sayısı
 $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
 ?>
 <!DOCTYPE html>
@@ -65,7 +89,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorumlu Paneli - Tedarik Portalı</title>
+    <title>Ana Sayfa - Sorumlu Paneli - Tedarik Portalı</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -79,6 +103,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #36b9cc;
             transition: all 0.3s;
+            width: 250px;
         }
         .sidebar-sticky {
             position: relative;
@@ -107,6 +132,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
         main {
             margin-left: 250px;
             padding: 2rem;
+            padding-top: 70px;
             transition: all 0.3s;
         }
         .navbar {
@@ -118,43 +144,73 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
             background-color: #fff !important;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
             transition: all 0.3s;
-        }
-        .card {
-            border: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-        }
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-        }
-        .card-primary .card-header {
-            background-color: #4e73df;
-            color: white;
-        }
-        .card-success .card-header {
-            background-color: #1cc88a;
-            color: white;
-        }
-        .card-info .card-header {
-            background-color: #36b9cc;
-            color: white;
-        }
-        .card-warning .card-header {
-            background-color: #f6c23e;
-            color: white;
-        }
-        .table-responsive {
-            overflow-x: auto;
+            height: 60px;
         }
         .badge-notification {
             position: absolute;
             top: 0.25rem;
             right: 0.25rem;
             font-size: 0.75rem;
+        }
+        .card-counter {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            padding: 20px 10px;
+            background-color: #fff;
+            height: 100px;
+            border-radius: 5px;
+            transition: .3s linear all;
+            margin-bottom: 1.5rem;
+        }
+        .card-counter:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transition: .3s linear all;
+        }
+        .card-counter i {
+            font-size: 4em;
+            opacity: 0.3;
+        }
+        .card-counter .count-numbers {
+            position: absolute;
+            right: 35px;
+            top: 20px;
+            font-size: 32px;
+            display: block;
+        }
+        .card-counter .count-name {
+            position: absolute;
+            right: 35px;
+            top: 65px;
+            font-style: italic;
+            text-transform: capitalize;
+            opacity: 0.8;
+            display: block;
+        }
+        .card-counter.primary {
+            background-color: #4e73df;
+            color: #fff;
+        }
+        .card-counter.success {
+            background-color: #1cc88a;
+            color: #fff;
+        }
+        .card-counter.info {
+            background-color: #36b9cc;
+            color: #fff;
+        }
+        .card-counter.warning {
+            background-color: #f6c23e;
+            color: #fff;
+        }
+        .notification-item {
+            border-left: 4px solid #36b9cc;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            background-color: #f8f9fc;
+            border-radius: 0.25rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        .notification-item.unread {
+            background-color: rgba(54, 185, 204, 0.05);
         }
     </style>
 </head>
@@ -222,20 +278,7 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
                             <?php endif; ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownBildirim">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <?php foreach ($bildirimler as $bildirim): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="bildirim_goruntule.php?id=<?= $bildirim['id'] ?>">
-                                            <?= guvenli(mb_substr($bildirim['mesaj'], 0, 50)) ?>...
-                                            <div class="small text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></div>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
-                            <?php else: ?>
-                                <li><a class="dropdown-item text-center" href="#">Bildirim bulunmamaktadır</a></li>
-                            <?php endif; ?>
+                            <li><a class="dropdown-item" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -257,191 +300,80 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
     <main>
         <div class="container-fluid">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Sorumlu Paneli Özeti</h1>
+                <h1 class="h2">Sorumlu Paneli</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <div class="btn-group me-2">
-                        <a href="siparis_guncelle.php" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil-square"></i> Sipariş Güncelle
+                        <a href="siparisler.php" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-list-check"></i> Siparişleri Görüntüle
+                        </a>
+                        <a href="tedarikcilerim.php" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-building"></i> Tedarikçilerim
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- İstatistikler -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-primary h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Sorumlu Olduğum Tedarikçiler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-building h1 text-primary"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $tedarikci_sayisi ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="tedarikcilerim.php" class="text-primary">Tedarikçilerimi Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
+            <!-- Özet Kartları -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card-counter primary">
+                        <i class="bi bi-list-check"></i>
+                        <span class="count-numbers"><?= $siparis_ozet['toplam_siparis'] ?></span>
+                        <span class="count-name">Toplam Sipariş</span>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-success h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Açık Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-clipboard-check h1 text-success"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['acik'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparisler.php?durum=1" class="text-success">Açık Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
+                <div class="col-md-3">
+                    <div class="card-counter success">
+                        <i class="bi bi-check-circle"></i>
+                        <span class="count-numbers"><?= $siparis_ozet['acik_siparis'] ?></span>
+                        <span class="count-name">Açık Sipariş</span>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-info h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Bekleyen Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-hourglass-split h1 text-info"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['beklemede'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparisler.php?durum=3" class="text-info">Bekleyen Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
+                <div class="col-md-3">
+                    <div class="card-counter warning">
+                        <i class="bi bi-hourglass-split"></i>
+                        <span class="count-numbers"><?= $siparis_ozet['bekleyen_siparis'] ?></span>
+                        <span class="count-name">Bekleyen Sipariş</span>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-warning h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Tamamlanan Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-check-circle h1 text-warning"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['kapali'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparisler.php?durum=2" class="text-warning">Tamamlanan Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
+                <div class="col-md-3">
+                    <div class="card-counter info">
+                        <i class="bi bi-building"></i>
+                        <span class="count-numbers"><?= $tedarikci_sayisi ?></span>
+                        <span class="count-name">Tedarikçi</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Tedarikçiler ve Son Siparişler -->
-            <div class="row">
-                <div class="col-lg-4">
+            <!-- İçerik Bölümü -->
+            <div class="row mt-4">
+                <!-- Son Siparişler -->
+                <div class="col-md-6">
                     <div class="card mb-4">
                         <div class="card-header bg-primary text-white">
-                            <h6 class="m-0 font-weight-bold">Sorumlu Olduğum Tedarikçiler</h6>
-                        </div>
-                        <div class="card-body">
-                            <?php if (count($tedarikciler) > 0): ?>
-                                <ul class="list-group">
-                                    <?php foreach ($tedarikciler as $tedarikci): ?>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <a href="tedarikci_detay.php?id=<?= $tedarikci['id'] ?>" class="text-decoration-none">
-                                                    <?= guvenli($tedarikci['firma_adi']) ?>
-                                                </a>
-                                                <small class="d-block text-muted"><?= guvenli($tedarikci['firma_kodu']) ?></small>
-                                            </div>
-                                            <a href="tedarikci_detay.php?id=<?= $tedarikci['id'] ?>" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <p class="text-center">Henüz size atanmış tedarikçi bulunmamaktadır.</p>
-                            <?php endif; ?>
-                            <div class="text-center mt-3">
-                                <a href="tedarikcilerim.php" class="btn btn-primary">Tüm Tedarikçileri Görüntüle</a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-list-check"></i> Son Siparişler</h5>
+                                <a href="siparisler.php" class="btn btn-sm btn-light">Tümünü Gör</a>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="m-0 font-weight-bold">Bildirimler</h6>
-                        </div>
                         <div class="card-body">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <ul class="list-group">
-                                    <?php foreach ($bildirimler as $bildirim): ?>
-                                        <li class="list-group-item">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <p class="mb-1"><?= guvenli($bildirim['mesaj']) ?></p>
-                                            </div>
-                                            <small class="text-muted">
-                                                <?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?>
-                                                <?php if ($bildirim['siparis_no']): ?>
-                                                    - Sipariş: <?= guvenli($bildirim['siparis_no']) ?>
-                                                <?php endif; ?>
-                                            </small>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <p class="text-center">Bildirim bulunmamaktadır.</p>
-                            <?php endif; ?>
-                            <div class="text-center mt-3">
-                                <a href="bildirimler.php" class="btn btn-info">Tüm Bildirimleri Görüntüle</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-8">
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="m-0 font-weight-bold">Son Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Sipariş No</th>
-                                            <th>Parça No</th>
-                                            <th>Tedarikçi</th>
-                                            <th>Proje</th>
-                                            <th>Durum</th>
-                                            <th>Tarih</th>
-                                            <th>İşlem</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if (count($son_siparisler) > 0): ?>
+                            <?php if (count($son_siparisler) > 0): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Sipariş No</th>
+                                                <th>Tedarikçi</th>
+                                                <th>Durum</th>
+                                                <th>Tarih</th>
+                                                <th>İşlem</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                                             <?php foreach ($son_siparisler as $siparis): ?>
                                                 <tr>
                                                     <td><?= guvenli($siparis['siparis_no']) ?></td>
-                                                    <td><?= guvenli($siparis['parca_no']) ?></td>
                                                     <td><?= guvenli($siparis['firma_adi']) ?></td>
-                                                    <td><?= guvenli($siparis['proje_adi']) ?></td>
                                                     <td>
                                                         <?php
                                                             $durum_renk = '';
@@ -457,26 +389,131 @@ $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $sorumlu_id);
                                                     </td>
                                                     <td><?= date('d.m.Y', strtotime($siparis['acilis_tarihi'])) ?></td>
                                                     <td>
-                                                        <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-sm btn-info">
+                                                        <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-sm btn-outline-primary">
                                                             <i class="bi bi-eye"></i>
-                                                        </a>
-                                                        <a href="siparis_guncelle.php?id=<?= $siparis['id'] ?>" class="btn btn-sm btn-success">
-                                                            <i class="bi bi-pencil"></i>
                                                         </a>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
-                                        <?php else: ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-center text-muted">Henüz sipariş bulunmamaktadır.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Tedarikçi Listesi -->
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-building"></i> Tedarikçilerim</h5>
+                                <a href="tedarikcilerim.php" class="btn btn-sm btn-light">Tümünü Gör</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <?php if (count($tedarikciler) > 0): ?>
+                                <div class="list-group">
+                                    <?php foreach ($tedarikciler as $tedarikci): ?>
+                                        <a href="tedarikci_detay.php?id=<?= $tedarikci['id'] ?>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><?= guvenli($tedarikci['firma_adi']) ?></h6>
+                                                <small class="text-muted"><?= guvenli($tedarikci['firma_kodu']) ?></small>
+                                            </div>
+                                            <span class="badge bg-primary rounded-pill"><?= $tedarikci['siparis_sayisi'] ?> Sipariş</span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-center text-muted">Henüz tedarikçi bulunmamaktadır.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <!-- Yaklaşan Teslimatlar -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="bi bi-clock"></i> Yaklaşan Teslimatlar</h5>
+                        </div>
+                        <div class="card-body">
+                            <?php if (count($yaklasan_teslimatlar) > 0): ?>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
                                             <tr>
-                                                <td colspan="7" class="text-center">Henüz sizin sorumluluğunuzda sipariş bulunmamaktadır.</td>
+                                                <th>Sipariş No</th>
+                                                <th>Tedarikçi</th>
+                                                <th>Teslim Tarihi</th>
+                                                <th>Kalan Gün</th>
+                                                <th>İşlem</th>
                                             </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($yaklasan_teslimatlar as $teslimat): 
+                                                $teslim_tarihi = new DateTime($teslimat['tedarikci_tarihi']);
+                                                $bugun = new DateTime();
+                                                $kalan_gun = $bugun->diff($teslim_tarihi)->days;
+                                                $gecikme_durumu = $bugun > $teslim_tarihi ? 'danger' : ($kalan_gun <= 3 ? 'warning' : 'success');
+                                            ?>
+                                                <tr>
+                                                    <td><?= guvenli($teslimat['siparis_no']) ?></td>
+                                                    <td><?= guvenli($teslimat['firma_adi']) ?></td>
+                                                    <td><?= date('d.m.Y', strtotime($teslimat['tedarikci_tarihi'])) ?></td>
+                                                    <td>
+                                                        <span class="badge bg-<?= $gecikme_durumu ?>">
+                                                            <?php if ($bugun > $teslim_tarihi): ?>
+                                                                <?= $kalan_gun ?> gün gecikti
+                                                            <?php else: ?>
+                                                                <?= $kalan_gun ?> gün kaldı
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="siparis_detay.php?id=<?= $teslimat['id'] ?>" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-center text-muted">Yaklaşan teslimat bulunmamaktadır.</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Son Bildirimler -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-bell"></i> Son Bildirimler</h5>
+                                <a href="bildirimler.php" class="btn btn-sm btn-light">Tümünü Gör</a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <?php if (count($bildirimler) > 0): ?>
+                                <?php foreach ($bildirimler as $bildirim): ?>
+                                    <div class="notification-item <?= $bildirim['okundu'] ? '' : 'unread' ?>">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-0"><?= guvenli($bildirim['mesaj']) ?></h6>
+                                            <small class="text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></small>
+                                        </div>
+                                        <p class="mb-1"><?= guvenli(substr($bildirim['mesaj'], 0, 100)) . (strlen($bildirim['mesaj']) > 100 ? '...' : '') ?></p>
+                                        <?php if (!$bildirim['okundu']): ?>
+                                            <div class="text-end">
+                                                <a href="bildirimler.php?bildirim_id=<?= $bildirim['id'] ?>" class="btn btn-sm btn-outline-primary">Detay</a>
+                                            </div>
                                         <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="text-center mt-3">
-                                <a href="siparisler.php" class="btn btn-success">Tüm Siparişleri Görüntüle</a>
-                            </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-center text-muted">Henüz bildirim bulunmamaktadır.</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
