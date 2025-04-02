@@ -1,0 +1,30 @@
+# Hassas veri içeren dosyalar
+config.php
+
+# Geçici dosyalar
+*.log
+*.tmp
+*.bak
+*.swp
+
+# IDE ve Editör dosyaları
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+
+# Composer
+/vendor/
+composer.lock
+
+# Uploads klasörü (kullanıcı yüklemeleri)
+/uploads/
+/dosyalar/
+
+# Cache ve oturum dosyaları
+/cache/
+/sessions/
+
+# Node modülleri
+/node_modules/
+package-lock.json 
