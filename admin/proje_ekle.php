@@ -38,10 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Hata yoksa projeyi ekle
     if (empty($hatalar)) {
         try {
-            $sql = "INSERT INTO projeler (proje_adi, proje_kodu, proje_yoneticisi, aciklama, baslangic_tarihi, bitis_tarihi, aktif, olusturma_tarihi) 
+            $sql = "INSERT INTO projeler (proje_adi, proje_kodu, proje_aciklama, baslangic_tarihi, bitis_tarihi, aktif, olusturan_id, olusturma_tarihi) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
             $stmt = $db->prepare($sql);
-            $stmt->execute([$proje_adi, $proje_kodu, $proje_yoneticisi, $aciklama, $baslangic_tarihi, $bitis_tarihi, $aktif]);
+            $stmt->execute([$proje_adi, $proje_kodu, $aciklama, $baslangic_tarihi, $bitis_tarihi, $aktif, $_SESSION['kullanici_id']]);
             
             $proje_id = $db->lastInsertId();
             

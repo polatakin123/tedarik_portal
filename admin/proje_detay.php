@@ -344,7 +344,7 @@ function durumRengiGetir($durum_id) {
                                 </div>
                                 <div class="col-md-6">
                                     <p class="fw-bold mb-1">Kayıt Tarihi:</p>
-                                    <p><?= date('d.m.Y', strtotime($proje['kayit_tarihi'])) ?></p>
+                                    <p><?= date('d.m.Y', strtotime($proje['olusturma_tarihi'])) ?></p>
                                 </div>
                             </div>
                             <div class="row mb-3">

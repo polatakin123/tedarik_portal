@@ -3,6 +3,14 @@
 require_once '../config.php';
 adminYetkisiKontrol();
 
+// Oturum kullanıcı ID'sini kontrol et
+if (!isset($_SESSION['kullanici_id']) || empty($_SESSION['kullanici_id'])) {
+    header("Location: ../giris.php?hata=" . urlencode("Oturum süresi dolmuş. Lütfen tekrar giriş yapın."));
+    exit;
+}
+
+$kullanici_id = $_SESSION['kullanici_id'];
+
 // Form gönderildiğinde
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firma_adi = isset($_POST['firma_adi']) ? trim($_POST['firma_adi']) : '';
@@ -41,12 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Hata yoksa tedarikçiyi ekle
     if (empty($hatalar)) {
         try {
-            $sql = "INSERT INTO tedarikciler (firma_adi, firma_kodu, yetkili_kisi, adres, telefon, email, vergi_no, vergi_dairesi, aciklama, aktif, kayit_tarihi) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            $sql = "INSERT INTO tedarikciler (firma_adi, firma_kodu, yetkili_kisi, adres, telefon, email, vergi_no, vergi_dairesi, aciklama, aktif, olusturan_id, olusturma_tarihi) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
             $stmt = $db->prepare($sql);
             $stmt->execute([
                 $firma_adi, $firma_kodu, $yetkili_kisi, $adres, $telefon, 
-                $email, $vergi_no, $vergi_dairesi, $aciklama, $aktif
+                $email, $vergi_no, $vergi_dairesi, $aciklama, $aktif, $kullanici_id
             ]);
             
             $tedarikci_id = $db->lastInsertId();
@@ -61,7 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Okunmamış bildirim sayısını al
-$kullanici_id = $_SESSION['kullanici_id'];
 $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
 
 // Son 5 bildirimi al

@@ -344,7 +344,7 @@ $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 </a>
                                             </td>
                                             <td><?= guvenli($proje['proje_kodu']) ?></td>
-                                            <td><?= guvenli($proje['proje_yoneticisi']) ?></td>
+                                            <td><?= isset($proje['proje_yoneticisi']) ? guvenli($proje['proje_yoneticisi']) : '-' ?></td>
                                             <td><?= tarihFormatla($proje['baslangic_tarihi']) ?></td>
                                             <td><?= $proje['bitis_tarihi'] ? tarihFormatla($proje['bitis_tarihi']) : '-' ?></td>
                                             <td>

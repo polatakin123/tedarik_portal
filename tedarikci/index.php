@@ -109,26 +109,28 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tedarikçi Paneli - Tedarik Portalı</title>
+    <title>Ana Sayfa - Tedarikçi Paneli</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        body {
+            background-color: #f8f9fc;
+        }
         .sidebar {
             position: fixed;
             top: 0;
             bottom: 0;
             left: 0;
             z-index: 100;
-            padding: 48px 0 0;
+            padding: 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #1cc88a;
-            transition: all 0.3s;
-            width: 250px;
+            background-color: #26c281;
+            width: 204px;
         }
         .sidebar-sticky {
-            position: relative;
+            position: sticky;
             top: 0;
-            height: calc(100vh - 48px);
+            height: 100vh;
             padding-top: 0.5rem;
             overflow-x: hidden;
             overflow-y: auto;
@@ -136,6 +138,7 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
         .sidebar .nav-link {
             color: rgba(255, 255, 255, 0.8);
             padding: 0.75rem 1rem;
+            font-weight: 500;
             transition: all 0.2s;
         }
         .sidebar .nav-link:hover {
@@ -149,66 +152,88 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
         .sidebar .nav-link i {
             margin-right: 0.5rem;
         }
+        .sidebar-heading {
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .sidebar-heading h4 {
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+        }
         main {
-            margin-left: 250px;
-            padding: 2rem;
-            padding-top: 70px;
-            transition: all 0.3s;
+            margin-left: 204px;
+            padding: 1.5rem;
         }
         .navbar {
-            position: fixed;
+            position: sticky;
             top: 0;
-            right: 0;
-            left: 250px;
-            z-index: 99;
+            z-index: 1000;
+            height: 56px;
             background-color: #fff !important;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-            height: 60px;
+        }
+        .navbar-toggler {
+            padding: 0.25rem 0.75rem;
+            font-size: 1.25rem;
+            line-height: 1;
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
         }
         .card {
             border: none;
+            margin-bottom: 1.5rem;
             border-radius: 0.5rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-        }
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
         .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-        }
-        .card-primary .card-header {
-            background-color: #4e73df;
-            color: white;
-        }
-        .card-success .card-header {
-            background-color: #1cc88a;
-            color: white;
-        }
-        .card-info .card-header {
-            background-color: #36b9cc;
-            color: white;
-        }
-        .card-warning .card-header {
-            background-color: #f6c23e;
-            color: white;
-        }
-        .table-responsive {
-            overflow-x: auto;
+            padding: 0.75rem 1.25rem;
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
         }
         .badge-notification {
             position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
+            top: 0.2rem;
+            right: 0.2rem;
             font-size: 0.75rem;
+        }
+        .stats-card {
+            border-left: 0.25rem solid;
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-4px);
+        }
+        .stats-card-primary {
+            border-left-color: #4e73df;
+        }
+        .stats-card-success {
+            border-left-color: #1cc88a;
+        }
+        .stats-card-info {
+            border-left-color: #36b9cc;
+        }
+        .stats-card-warning {
+            border-left-color: #f6c23e;
+        }
+        .stats-card-icon {
+            font-size: 2rem;
+            opacity: 0.2;
+        }
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .card-link:hover {
+            color: inherit;
         }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
-    <nav class="sidebar col-md-3 col-lg-2 d-md-block text-white">
-        <div class="pt-3 text-center mb-4">
+    <nav class="sidebar">
+        <div class="sidebar-heading">
             <h4>Tedarik Portalı</h4>
             <p>Tedarikçi Paneli</p>
         </div>
@@ -253,296 +278,275 @@ $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </nav>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownBildirim" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-bell"></i>
+    <!-- Ana içerik -->
+    <main>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">Tedarikçi Paneli</span>
+                <div class="ms-auto d-flex">
+                    <div class="dropdown me-3">
+                        <a class="nav-link position-relative" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fs-5"></i>
                             <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="badge rounded-pill bg-danger badge-notification"><?= $okunmamis_bildirim_sayisi ?></span>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"><?= $okunmamis_bildirim_sayisi ?></span>
                             <?php endif; ?>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownBildirim">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <?php foreach ($bildirimler as $bildirim): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="bildirim_goruntule.php?id=<?= $bildirim['id'] ?>">
-                                            <?= guvenli(mb_substr($bildirim['mesaj'], 0, 50)) ?>...
-                                            <div class="small text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></div>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
-                            <?php else: ?>
-                                <li><a class="dropdown-item text-center" href="#">Bildirim bulunmamaktadır</a></li>
-                            <?php endif; ?>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#">Bildirimleri Gör</a></li>
                         </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> <?= guvenli($_SESSION['ad_soyad']) ?>
+                    </div>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i> <?= htmlspecialchars($_SESSION['ad_soyad']) ?>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
-                            <li><a class="dropdown-item" href="profil.php">Profilim</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="profil.php">Profil</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
                         </ul>
-                    </li>
-                </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Firma Bilgileri -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Firma Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Firma Adı:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['firma_adi']) ?></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Firma Kodu:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['firma_kodu'] ?? '-') ?></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Vergi No:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['vergi_no'] ?? '-') ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Yetkili Kişi:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['yetkili_kisi'] ?? '-') ?></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">E-posta:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['email'] ?? '-') ?></div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Telefon:</div>
+                            <div class="col-md-8"><?= htmlspecialchars($tedarikci['telefon'] ?? '-') ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="row">
+            <!-- Toplam Siparişler -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-card-primary h-100">
+                    <a href="siparislerim.php" class="card-link">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col">
+                                    <div class="text-xs fw-bold text-primary text-uppercase mb-1">Toplam Siparişler</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800"><?= $siparisler_istatistik['toplam'] ?? 0 ?></div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-clipboard-check stats-card-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Açık Siparişler -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-card-warning h-100">
+                    <a href="siparislerim.php?durum_id=1" class="card-link">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col">
+                                    <div class="text-xs fw-bold text-warning text-uppercase mb-1">Açık Siparişler</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800"><?= $siparisler_istatistik['acik'] ?? 0 ?></div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-hourglass-split stats-card-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bekleyen Siparişler -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-card-info h-100">
+                    <a href="siparislerim.php?durum_id=3" class="card-link">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col">
+                                    <div class="text-xs fw-bold text-info text-uppercase mb-1">Bekleyen Siparişler</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800"><?= $siparisler_istatistik['beklemede'] ?? 0 ?></div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-clock-history stats-card-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tamamlanan Siparişler -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card stats-card stats-card-success h-100">
+                    <a href="siparislerim.php?durum_id=2" class="card-link">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col">
+                                    <div class="text-xs fw-bold text-success text-uppercase mb-1">Tamamlanan Siparişler</div>
+                                    <div class="h5 mb-0 fw-bold text-gray-800"><?= $siparisler_istatistik['kapali'] ?? 0 ?></div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-check-circle stats-card-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Ana İçerik -->
-    <main>
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Tedarikçi Paneli</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <a href="siparis_guncelle.php" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil-square"></i> Sipariş Güncelle
+        <!-- Yaklaşan Teslimatlar -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">Yaklaşan Teslimatlar</h5>
+            </div>
+            <div class="card-body">
+                <?php if (empty($yaklasan_teslimler)): ?>
+                    <div class="alert alert-info">
+                        Yaklaşan teslimat bulunmamaktadır.
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sipariş No</th>
+                                    <th>Parça No</th>
+                                    <th>Tanım</th>
+                                    <th>Proje</th>
+                                    <th>Teslim Tarihi</th>
+                                    <th>Kalan Gün</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($yaklasan_teslimler as $teslimat): ?>
+                                    <tr class="<?= $teslimat['kalan_gun'] <= 3 ? 'table-danger' : ($teslimat['kalan_gun'] <= 7 ? 'table-warning' : '') ?>">
+                                        <td><?= htmlspecialchars($teslimat['siparis_no']) ?></td>
+                                        <td><?= htmlspecialchars($teslimat['parca_no']) ?></td>
+                                        <td><?= htmlspecialchars($teslimat['aciklama']) ?></td>
+                                        <td><?= htmlspecialchars($teslimat['proje_adi']) ?></td>
+                                        <td><?= date('d.m.Y', strtotime($teslimat['teslim_tarihi'])) ?></td>
+                                        <td>
+                                            <span class="badge <?= $teslimat['kalan_gun'] <= 3 ? 'bg-danger' : ($teslimat['kalan_gun'] <= 7 ? 'bg-warning' : 'bg-info') ?>">
+                                                <?= $teslimat['kalan_gun'] ?> gün
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="siparis_detay.php?id=<?= $teslimat['id'] ?>" class="btn btn-info" title="Detay">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="siparis_guncelle.php?id=<?= $teslimat['id'] ?>" class="btn btn-primary" title="Güncelle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-3">
+                        <a href="teslimatlarim.php" class="btn btn-outline-warning">
+                            Tüm Teslimatları Görüntüle <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
-                </div>
+                <?php endif; ?>
             </div>
+        </div>
 
-            <!-- Firma Bilgileri -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="m-0 font-weight-bold">Firma Bilgileri</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Firma Adı:</strong> <?= guvenli($tedarikci['firma_adi']) ?></p>
-                            <p><strong>Firma Kodu:</strong> <?= guvenli($tedarikci['firma_kodu']) ?></p>
-                            <p><strong>Vergi No:</strong> <?= guvenli($tedarikci['vergi_no']) ?></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Yetkili Kişi:</strong> <?= guvenli($tedarikci['yetkili_kisi']) ?></p>
-                            <p><strong>E-posta:</strong> <?= guvenli($tedarikci['email']) ?></p>
-                            <p><strong>Telefon:</strong> <?= guvenli($tedarikci['telefon']) ?></p>
-                        </div>
-                    </div>
-                </div>
+        <!-- Son Siparişler -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Son Siparişler</h5>
             </div>
-
-            <!-- İstatistikler -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-primary h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Toplam Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-cart h1 text-primary"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['toplam'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparislerim.php" class="text-primary">Tüm Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
+            <div class="card-body">
+                <?php if (empty($son_siparisler)): ?>
+                    <div class="alert alert-info">
+                        Henüz sipariş bulunmamaktadır.
                     </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-success h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Açık Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-clipboard-check h1 text-success"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['acik'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparislerim.php?durum=1" class="text-success">Açık Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-info h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Bekleyen Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-hourglass-split h1 text-info"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['beklemede'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparislerim.php?durum=3" class="text-info">Bekleyen Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card card-warning h-100">
-                        <div class="card-header">
-                            <h6 class="m-0 font-weight-bold">Tamamlanan Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <i class="bi bi-check-circle h1 text-warning"></i>
-                                </div>
-                                <div class="col ml-3">
-                                    <div class="h2 mb-0 font-weight-bold"><?= $siparisler_istatistik['kapali'] ?? 0 ?></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-light">
-                            <a href="siparislerim.php?durum=2" class="text-warning">Tamamlanan Siparişleri Görüntüle <i class="bi bi-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Yaklaşan Teslimler ve Siparişler -->
-            <div class="row">
-                <div class="col-lg-4">
-                    <div class="card mb-4">
-                        <div class="card-header bg-warning text-white">
-                            <h6 class="m-0 font-weight-bold">Yaklaşan Teslimatlar</h6>
-                        </div>
-                        <div class="card-body">
-                            <?php if (count($yaklasan_teslimler) > 0): ?>
-                                <ul class="list-group">
-                                    <?php foreach ($yaklasan_teslimler as $teslim): ?>
-                                        <li class="list-group-item">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <h6 class="mb-1"><?= guvenli($teslim['siparis_no']) ?></h6>
-                                                <small class="text-<?= strtotime($teslim['teslim_tarihi']) < strtotime('+7 days') ? 'danger' : 'warning' ?>">
-                                                    <?= date('d.m.Y', strtotime($teslim['teslim_tarihi'])) ?>
-                                                </small>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sipariş No</th>
+                                    <th>Parça No</th>
+                                    <th>Tanım</th>
+                                    <th>Proje</th>
+                                    <th>Açılış Tarihi</th>
+                                    <th>Durum</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($son_siparisler as $siparis): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($siparis['siparis_no']) ?></td>
+                                        <td><?= htmlspecialchars($siparis['parca_no']) ?></td>
+                                        <td><?= htmlspecialchars($siparis['aciklama']) ?></td>
+                                        <td><?= htmlspecialchars($siparis['proje_adi']) ?></td>
+                                        <td><?= date('d.m.Y', strtotime($siparis['acilis_tarihi'])) ?></td>
+                                        <td>
+                                            <span class="badge <?= ($siparis['durum_id'] == 1 ? 'bg-warning' : ($siparis['durum_id'] == 2 ? 'bg-success' : ($siparis['durum_id'] == 3 ? 'bg-info' : 'bg-secondary'))) ?>">
+                                                <?= htmlspecialchars($siparis['durum_adi']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-info" title="Detay">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="siparis_guncelle.php?id=<?= $siparis['id'] ?>" class="btn btn-primary" title="Güncelle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
                                             </div>
-                                            <p class="mb-1"><?= guvenli($teslim['parca_no']) ?> - <?= guvenli($teslim['aciklama']) ?></p>
-                                            <small class="text-muted">Proje: <?= guvenli($teslim['proje_adi']) ?></small>
-                                            <a href="siparis_detay.php?id=<?= $teslim['id'] ?>" class="btn btn-sm btn-outline-warning float-end">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <p class="text-center">30 gün içinde yaklaşan teslimatınız bulunmamaktadır.</p>
-                            <?php endif; ?>
-                            <div class="text-center mt-3">
-                                <a href="teslimatlarim.php" class="btn btn-warning">Tüm Teslimatları Görüntüle</a>
-                            </div>
-                        </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="m-0 font-weight-bold">İletişim Sorumluları</h6>
-                        </div>
-                        <div class="card-body">
-                            <?php if (count($sorumlular) > 0): ?>
-                                <ul class="list-group">
-                                    <?php foreach ($sorumlular as $sorumlu): ?>
-                                        <li class="list-group-item">
-                                            <h6 class="mb-1"><?= guvenli($sorumlu['ad_soyad']) ?></h6>
-                                            <p class="mb-1"><i class="bi bi-envelope me-2"></i> <?= guvenli($sorumlu['email']) ?></p>
-                                            <p class="mb-0"><i class="bi bi-telephone me-2"></i> <?= guvenli($sorumlu['telefon']) ?></p>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php else: ?>
-                                <p class="text-center">Henüz size atanan sorumlu bulunmamaktadır.</p>
-                            <?php endif; ?>
-                        </div>
+                    <div class="text-end mt-3">
+                        <a href="siparislerim.php" class="btn btn-outline-success">
+                            Tüm Siparişleri Görüntüle <i class="bi bi-arrow-right"></i>
+                        </a>
                     </div>
-                </div>
-                
-                <div class="col-lg-8">
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="m-0 font-weight-bold">Son Siparişler</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Sipariş No</th>
-                                            <th>Parça No</th>
-                                            <th>Açıklama</th>
-                                            <th>Miktar</th>
-                                            <th>Teslim Tarihi</th>
-                                            <th>Durum</th>
-                                            <th>İşlem</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if (count($son_siparisler) > 0): ?>
-                                            <?php foreach ($son_siparisler as $siparis): ?>
-                                                <tr>
-                                                    <td><?= guvenli($siparis['siparis_no']) ?></td>
-                                                    <td><?= guvenli($siparis['parca_no']) ?></td>
-                                                    <td><?= guvenli(mb_substr($siparis['aciklama'], 0, 30)) ?>...</td>
-                                                    <td><?= $siparis['miktar'] ?> <?= guvenli($siparis['birim']) ?></td>
-                                                    <td><?= date('d.m.Y', strtotime($siparis['teslim_tarihi'])) ?></td>
-                                                    <td>
-                                                        <?php
-                                                            $durum_renk = '';
-                                                            switch ($siparis['durum_id']) {
-                                                                case 1: $durum_renk = 'success'; break; // Açık
-                                                                case 2: $durum_renk = 'secondary'; break; // Kapalı
-                                                                case 3: $durum_renk = 'warning'; break; // Beklemede
-                                                                case 4: $durum_renk = 'danger'; break; // İptal
-                                                                default: $durum_renk = 'primary';
-                                                            }
-                                                        ?>
-                                                        <span class="badge bg-<?= $durum_renk ?>"><?= guvenli($siparis['durum_adi']) ?></span>
-                                                    </td>
-                                                    <td>
-                                                        <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-sm btn-info">
-                                                            <i class="bi bi-eye"></i>
-                                                        </a>
-                                                        <?php if ($siparis['durum_id'] == 1): ?>
-                                                        <a href="siparis_guncelle.php?id=<?= $siparis['id'] ?>" class="btn btn-sm btn-success">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </a>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="7" class="text-center">Henüz siparişiniz bulunmamaktadır.</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="text-center mt-3">
-                                <a href="siparislerim.php" class="btn btn-success">Tüm Siparişleri Görüntüle</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
     </main>
