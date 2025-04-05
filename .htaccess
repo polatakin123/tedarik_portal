@@ -1,0 +1,108 @@
+# Tedarik Portalı - .htaccess Yapılandırması
+
+# Apache modüllerinin aktif olduğundan emin olun
+<IfModule mod_rewrite.c>
+    Options +FollowSymLinks
+    RewriteEngine On
+    RewriteBase /projeler/savunma/
+    
+    # HTTPS Yönlendirmesi (Canlıya alındığında etkinleştirin)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    
+    # www olmadan çalışmasını sağla (Canlıya alındığında etkinleştirin)
+    # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    # RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+    
+    # PHP uzantılarını gizle
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /([^.]+)\.php\ HTTP
+    RewriteRule ^([^.]+)\.php$ /$1 [R=301,L]
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^([^.]+)$ $1.php [L]
+    
+    # Admin paneli yönlendirmeleri
+    RewriteRule ^admin/(.*)$ admin/$1 [L]
+    
+    # Tedarikçi paneli yönlendirmeleri
+    RewriteRule ^tedarikci/(.*)$ tedarikci/$1 [L]
+</IfModule>
+
+# Dizin listelemeyi devre dışı bırakma
+Options -Indexes
+
+# Hata sayfaları
+ErrorDocument 404 /projeler/savunma/404.php
+ErrorDocument 403 /projeler/savunma/403.php
+ErrorDocument 500 /projeler/savunma/500.php
+
+# PHP ayarları
+<IfModule mod_php7.c>
+    # PHP hata raporlamayı devre dışı bırak (Canlı ortam için)
+    # php_flag display_startup_errors off
+    # php_flag display_errors off
+    # php_flag html_errors off
+    
+    # PHP hata günlük kaydı
+    # php_flag log_errors on
+    # php_value error_log logs/php_error.log
+    
+    # PHP güvenlik ayarları
+    php_flag register_globals off
+    php_flag magic_quotes_gpc off
+    
+    # Session güvenliği
+    php_value session.cookie_httponly 1
+    php_value session.use_only_cookies 1
+</IfModule>
+
+# Dosya önbelleği ayarları
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Resimler
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS, JavaScript
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    
+    # Diğer
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType application/x-shockwave-flash "access plus 1 month"
+</IfModule>
+
+# Bazı güvenlik önlemleri
+<FilesMatch "^\.(?!well-known)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# .htaccess, .git ve diğer hassas dosyaları koruması
+<FilesMatch "^(\.(htaccess|htpasswd|git|gitignore|env|config|ini)|README\.md|composer\.(json|lock))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# MIME Tipleri
+AddType application/javascript .js
+AddType text/css .css
+AddType image/svg+xml .svg
+
+# UTF-8 karakter kodlaması
+AddDefaultCharset UTF-8 
