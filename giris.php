@@ -74,48 +74,109 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tedarik Portalı - Giriş</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #1a3a5f;
+            --secondary-color: #36404a;
+            --light-color: #f2f4f8;
+            --border-color: #d8dbe0;
+        }
+        
         body {
-            background-color: #f8f9fa;
+            background-color: var(--light-color);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        
         .login-container {
-            max-width: 450px;
-            margin: 100px auto;
+            max-width: 400px;
+            width: 100%;
+            padding: 0 15px;
         }
+        
         .card {
             border: none;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border-radius: 0.25rem;
+            overflow: hidden;
         }
+        
         .card-header {
-            background: linear-gradient(to right, #4e73df, #224abe);
+            background: var(--primary-color);
             color: white;
-            padding: 20px;
-            border-radius: 5px 5px 0 0 !important;
+            padding: 1.5rem;
+            border-radius: 0 !important;
+            text-align: center;
         }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+        
+        .form-control {
+            border-color: var(--border-color);
+            padding: 0.75rem 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(26, 58, 95, 0.25);
+        }
+        
         .btn-primary {
-            background-color: #4e73df;
-            border-color: #4e73df;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 0.75rem;
+            font-weight: 500;
         }
-        .btn-primary:hover {
-            background-color: #224abe;
-            border-color: #224abe;
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #122a47;
+            border-color: #122a47;
         }
+        
+        .copyright {
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        .forgot-password {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        
         .logo {
             max-width: 200px;
-            margin-bottom: 20px;
+            margin: 0 auto 1.5rem;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="container login-container">
+    <div class="login-container">
         <div class="text-center mb-4">
-            <img src="assets/img/logo.png" alt="Logo" class="logo">
+            <img src="assets/img/logo.png" alt="Tedarik Portalı" class="logo">
         </div>
         <div class="card">
-            <div class="card-header text-center">
-                <h4 class="mb-0">Tedarik Portalı Giriş</h4>
+            <div class="card-header">
+                <h4 class="mb-0">Tedarik Portalı</h4>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body">
                 <?php if ($hata): ?>
                     <div class="alert alert-danger"><?= guvenli($hata) ?></div>
                 <?php endif; ?>
@@ -123,24 +184,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <form method="post">
                     <div class="mb-3">
                         <label for="kullanici_adi" class="form-label">Kullanıcı Adı</label>
-                        <input type="text" class="form-control" id="kullanici_adi" name="kullanici_adi" required>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="kullanici_adi" name="kullanici_adi" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="sifre" class="form-label">Şifre</label>
-                        <input type="password" class="form-control" id="sifre" name="sifre" required>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" class="form-control" id="sifre" name="sifre" required>
+                        </div>
                     </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">Giriş Yap</button>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">GİRİŞ YAP</button>
                     </div>
                 </form>
                 
                 <div class="text-center mt-3">
-                    <a href="sifremi_unuttum.php">Şifremi Unuttum</a>
+                    <a href="sifremi_unuttum.php" class="forgot-password">Şifremi Unuttum</a>
                 </div>
             </div>
         </div>
-        <div class="text-center mt-3 text-muted small">
-            &copy; <?= date('Y') ?> Tedarik Portalı. Tüm hakları saklıdır.
+        <div class="copyright">
+            &copy; <?= date('Y') ?> Tedarik Portalı - Tüm hakları saklıdır.
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

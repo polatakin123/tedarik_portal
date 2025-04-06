@@ -3,10 +3,14 @@
 require_once '../config.php';
 tedarikciYetkisiKontrol();
 
+// Sayfa başlığını ayarla
+$page_title = "Profil";
+
 // Tedarikçi bilgilerini al
 $kullanici_id = $_SESSION['kullanici_id'];
 $tedarikci_sql = "SELECT t.* FROM tedarikciler t 
-                 WHERE t.id = (SELECT tedarikci_id FROM kullanici_tedarikci_iliskileri WHERE kullanici_id = ?)";
+                 INNER JOIN kullanici_tedarikci_iliskileri kti ON t.id = kti.tedarikci_id
+                 WHERE kti.kullanici_id = ?";
 $tedarikci_stmt = $db->prepare($tedarikci_sql);
 $tedarikci_stmt->execute([$kullanici_id]);
 $tedarikci = $tedarikci_stmt->fetch(PDO::FETCH_ASSOC);
@@ -188,319 +192,176 @@ $sorumlular_stmt = $db->prepare($sorumlular_sql);
 $sorumlular_stmt->execute([$tedarikci['id']]);
 $sorumlular = $sorumlular_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Okunmamış bildirimleri al
-$okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
+// Header dosyasını dahil et
+include 'header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilim - Tedarikçi Paneli</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fc;
-        }
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #26c281;
-            width: 204px;
-        }
-        .sidebar-sticky {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            padding-top: 0.5rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        .sidebar-heading {
-            color: white;
-            text-align: center;
-            padding: 20px 0;
-        }
-        .sidebar-heading h4 {
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-        }
-        main {
-            margin-left: 204px;
-            padding: 1.5rem;
-        }
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            height: 56px;
-            background-color: #fff !important;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .navbar-toggler {
-            padding: 0.25rem 0.75rem;
-            font-size: 1.25rem;
-            line-height: 1;
-            background-color: transparent;
-            border: 1px solid transparent;
-            border-radius: 0.25rem;
-        }
-        .card {
-            border: none;
-            margin-bottom: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .card-header {
-            padding: 0.75rem 1.25rem;
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-        }
-        .badge-notification {
-            position: absolute;
-            top: 0.2rem;
-            right: 0.2rem;
-            font-size: 0.75rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <div class="sidebar-heading">
-            <h4>Tedarik Portalı</h4>
-            <p>Tedarikçi Paneli</p>
-        </div>
-        <div class="sidebar-sticky">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house-door"></i> Ana Sayfa
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparislerim.php">
-                        <i class="bi bi-list-check"></i> Siparişlerim
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparis_guncelle.php">
-                        <i class="bi bi-pencil-square"></i> Sipariş Güncelle
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="teslimatlarim.php">
-                        <i class="bi bi-truck"></i> Teslimatlarım
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="dokumanlar.php">
-                        <i class="bi bi-file-earmark-text"></i> Dokümanlar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="profil.php">
-                        <i class="bi bi-person"></i> Profilim
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link" href="../cikis.php">
-                        <i class="bi bi-box-arrow-right"></i> Çıkış Yap
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
 
-    <!-- Ana içerik -->
-    <main>
-        <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
-            <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">Profilim</span>
-                <div class="ms-auto d-flex">
-                    <div class="dropdown me-3">
-                        <a class="nav-link position-relative" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-bell fs-5"></i>
-                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"><?= $okunmamis_bildirim_sayisi ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Bildirimleri Gör</a></li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-1"></i> <?= htmlspecialchars($_SESSION['ad_soyad']) ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="profil.php">Profil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
-                        </ul>
-                    </div>
-                </div>
+<h2 class="mb-4">Profil Yönetimi</h2>
+
+<!-- Bildirimler -->
+<?php if (!empty($mesaj)): ?>
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <?= guvenli($mesaj) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($hata)): ?>
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <?= guvenli($hata) ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php endif; ?>
+
+<div class="row">
+    <!-- Kullanıcı Bilgileri -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Kullanıcı Bilgileri</h5>
             </div>
-        </nav>
-
-        <?php if (isset($mesaj)): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?= htmlspecialchars($mesaj) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-            </div>
-        <?php endif; ?>
-
-        <?php if (isset($hata)): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?= htmlspecialchars($hata) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-            </div>
-        <?php endif; ?>
-
-        <div class="row">
-            <!-- Kullanıcı Bilgileri -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-person-fill me-2"></i> Kullanıcı Bilgileri
-                        </h5>
+            <div class="card-body">
+                <form method="post" action="">
+                    <input type="hidden" name="action" value="profil_guncelle">
+                    <div class="mb-3">
+                        <label for="ad_soyad" class="form-label">Ad Soyad</label>
+                        <input type="text" class="form-control" id="ad_soyad" name="ad_soyad" value="<?= guvenli($kullanici['ad_soyad']) ?>">
                     </div>
-                    <div class="card-body">
-                        <form method="post" action="">
-                            <input type="hidden" name="action" value="kullanici_guncelle">
-                            <div class="mb-3">
-                                <label for="ad_soyad" class="form-label">Ad Soyad</label>
-                                <input type="text" class="form-control" id="ad_soyad" name="ad_soyad" value="<?= htmlspecialchars($kullanici['ad_soyad']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="email" class="form-label">E-posta</label>
-                                <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($kullanici['email']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="telefon" class="form-label">Telefon</label>
-                                <input type="text" class="form-control" id="telefon" name="telefon" value="<?= htmlspecialchars($kullanici['telefon'] ?? '') ?>">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-posta</label>
+                        <input type="email" class="form-control" id="email" name="email" value="<?= guvenli($kullanici['email']) ?>">
                     </div>
-                </div>
-
-                <!-- Şifre Değiştirme -->
-                <div class="card">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-shield-lock-fill me-2"></i> Şifre Değiştir
-                        </h5>
+                    <div class="mb-3">
+                        <label for="telefon" class="form-label">Telefon</label>
+                        <input type="tel" class="form-control" id="telefon" name="telefon" value="<?= guvenli($kullanici['telefon']) ?>">
                     </div>
-                    <div class="card-body">
-                        <form method="post" action="">
-                            <input type="hidden" name="action" value="sifre_degistir">
-                            <div class="mb-3">
-                                <label for="mevcut_sifre" class="form-label">Mevcut Şifre</label>
-                                <input type="password" class="form-control" id="mevcut_sifre" name="mevcut_sifre" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="yeni_sifre" class="form-label">Yeni Şifre</label>
-                                <input type="password" class="form-control" id="yeni_sifre" name="yeni_sifre" 
-                                    minlength="8" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="yeni_sifre_tekrar" class="form-label">Yeni Şifre Tekrar</label>
-                                <input type="password" class="form-control" id="yeni_sifre_tekrar" name="yeni_sifre_tekrar" 
-                                    minlength="8" required>
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-text">
-                                    <ul>
-                                        <li>Şifreniz en az 8 karakter uzunluğunda olmalıdır.</li>
-                                        <li>En az bir büyük harf, bir küçük harf ve bir sayı içermelidir.</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-warning">Şifreyi Değiştir</button>
-                        </form>
+                    <div class="mb-3">
+                        <label for="kayit_tarihi" class="form-label">Kayıt Tarihi</label>
+                        <input type="text" class="form-control" id="kayit_tarihi" value="<?= date('d.m.Y H:i', strtotime($kullanici['olusturma_tarihi'])) ?>" readonly>
                     </div>
-                </div>
-            </div>
-
-            <!-- Firma Bilgileri -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-building me-2"></i> Firma Bilgileri
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form method="post" action="">
-                            <input type="hidden" name="action" value="firma_guncelle">
-                            <div class="mb-3">
-                                <label for="firma_adi" class="form-label">Firma Adı</label>
-                                <input type="text" class="form-control" id="firma_adi" name="firma_adi" value="<?= htmlspecialchars($tedarikci['firma_adi']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="yetkili_kisi" class="form-label">Yetkili Kişi</label>
-                                <input type="text" class="form-control" id="yetkili_kisi" name="yetkili_kisi" value="<?= htmlspecialchars($tedarikci['yetkili_kisi'] ?? '') ?>">
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="vergi_no" class="form-label">Vergi No</label>
-                                    <input type="text" class="form-control" id="vergi_no" name="vergi_no" value="<?= htmlspecialchars($tedarikci['vergi_no'] ?? '') ?>">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="firma_telefon" class="form-label">Firma Telefon</label>
-                                    <input type="text" class="form-control" id="firma_telefon" name="firma_telefon" value="<?= htmlspecialchars($tedarikci['telefon'] ?? '') ?>">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="firma_email" class="form-label">Firma E-posta</label>
-                                <input type="email" class="form-control" id="firma_email" name="firma_email" value="<?= htmlspecialchars($tedarikci['email'] ?? '') ?>">
-                            </div>
-                            <div class="mb-3">
-                                <label for="firma_adres" class="form-label">Adres</label>
-                                <textarea class="form-control" id="firma_adres" name="firma_adres" rows="3"><?= htmlspecialchars($tedarikci['adres'] ?? '') ?></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="web_sitesi" class="form-label">Web Sitesi</label>
-                                <input type="url" class="form-control" id="web_sitesi" name="web_sitesi" value="<?= htmlspecialchars($tedarikci['web_sitesi'] ?? '') ?>" placeholder="https://...">
-                            </div>
-                            <div class="mb-3">
-                                <label for="aciklama" class="form-label">Ek Bilgiler</label>
-                                <textarea class="form-control" id="aciklama" name="aciklama" rows="3"><?= htmlspecialchars($tedarikci['aciklama'] ?? '') ?></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-success">Firma Bilgilerini Güncelle</button>
-                        </form>
-                    </div>
-                </div>
+                    <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
+                </form>
             </div>
         </div>
-    </main>
+    </div>
+    
+    <!-- Şifre Değiştirme -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Şifre Değiştir</h5>
+            </div>
+            <div class="card-body">
+                <?php if (!empty($sifre_mesaj)): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?= guvenli($sifre_mesaj) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($sifre_hata)): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?= guvenli($sifre_hata) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php endif; ?>
+                
+                <form method="post" action="">
+                    <input type="hidden" name="action" value="sifre_degistir">
+                    <div class="mb-3">
+                        <label for="mevcut_sifre" class="form-label">Mevcut Şifre</label>
+                        <input type="password" class="form-control" id="mevcut_sifre" name="mevcut_sifre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="yeni_sifre" class="form-label">Yeni Şifre</label>
+                        <input type="password" class="form-control" id="yeni_sifre" name="yeni_sifre" required>
+                        <div class="form-text">Şifreniz en az 6 karakter olmalıdır.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="yeni_sifre_tekrar" class="form-label">Yeni Şifre (Tekrar)</label>
+                        <input type="password" class="form-control" id="yeni_sifre_tekrar" name="yeni_sifre_tekrar" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Şifreyi Değiştir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firma Bilgileri -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Firma Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="">
+                    <input type="hidden" name="action" value="firma_guncelle">
+                    <div class="mb-3">
+                        <label for="firma_adi" class="form-label">Firma Adı</label>
+                        <input type="text" class="form-control" id="firma_adi" name="firma_adi" value="<?= guvenli($tedarikci['firma_adi']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="firma_kodu" class="form-label">Firma Kodu</label>
+                        <input type="text" class="form-control" id="firma_kodu" value="<?= guvenli($tedarikci['firma_kodu'] ?? '') ?>" readonly>
+                        <div class="form-text">Firma kodu sistem tarafından atanır ve değiştirilemez.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="vergi_no" class="form-label">Vergi No</label>
+                        <input type="text" class="form-control" id="vergi_no" name="vergi_no" value="<?= guvenli($tedarikci['vergi_no'] ?? '') ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="yetkili_kisi" class="form-label">Yetkili Kişi</label>
+                        <input type="text" class="form-control" id="yetkili_kisi" name="yetkili_kisi" value="<?= guvenli($tedarikci['yetkili_kisi'] ?? '') ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="adres" class="form-label">Adres</label>
+                        <textarea class="form-control" id="adres" name="adres" rows="3"><?= guvenli($tedarikci['adres'] ?? '') ?></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Firma Bilgilerini Güncelle</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sorumlu Kişiler -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">İlgili Sorumlular</h5>
+            </div>
+            <div class="card-body">
+                <?php if (count($sorumlular) > 0): ?>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ad Soyad</th>
+                                <th>E-posta</th>
+                                <th>Telefon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($sorumlular as $sorumlu): ?>
+                            <tr>
+                                <td><?= guvenli($sorumlu['ad_soyad']) ?></td>
+                                <td><?= guvenli($sorumlu['email']) ?></td>
+                                <td><?= guvenli($sorumlu['telefon'] ?? '-') ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> Size henüz sorumlu atanmamış.
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+<?php
+// Footer dosyasını dahil et
+include 'footer.php';
+?> 

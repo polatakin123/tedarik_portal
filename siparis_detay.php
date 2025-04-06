@@ -12,10 +12,9 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $siparis_id = intval($_GET['id']);
 
 // Sipariş bilgisini getir
-$sql = "SELECT s.*, sd.durum_adi, mt.montaj_adi, r.renk_kodu, r.renk_adi, k.ad_soyad as olusturan
+$sql = "SELECT s.*, sd.durum_adi, r.renk_kodu, r.renk_adi, k.ad_soyad as olusturan
         FROM siparisler s
         LEFT JOIN siparis_durumlari sd ON s.durum_id = sd.id
-        LEFT JOIN montaj_tipleri mt ON s.montaj_id = mt.id
         LEFT JOIN renkler r ON s.renk_id = r.id
         LEFT JOIN kullanicilar k ON s.olusturan_id = k.id
         WHERE s.id = ?";
@@ -137,8 +136,8 @@ $siparis_gecmisi = $log_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <td><?= guvenli($siparis['profil']) ?></td>
                                 </tr>
                                 <tr>
-                                    <th>Montaj</th>
-                                    <td><?= guvenli($siparis['montaj_adi'] ?? '-') ?></td>
+                                    <th>Montaj Tipi:</th>
+                                    <td>-</td>
                                 </tr>
                                 <tr>
                                     <th>Tarih</th>

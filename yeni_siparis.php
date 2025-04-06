@@ -11,8 +11,13 @@ $durum_query = $db->query("SELECT * FROM siparis_durumlari");
 $durumlar = $durum_query->fetchAll(PDO::FETCH_ASSOC);
 
 // Montaj tiplerini getir
-$montaj_query = $db->query("SELECT * FROM montaj_tipleri");
-$montaj_tipleri = $montaj_query->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $montaj_query = $db->query("SELECT * FROM montaj_tipleri");
+    $montaj_tipleri = $montaj_query->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Tablo yoksa boş dizi oluştur
+    $montaj_tipleri = [];
+}
 
 // Renkleri getir
 $renk_query = $db->query("SELECT * FROM renkler");

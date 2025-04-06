@@ -37,7 +37,11 @@ if (ini_get("session.use_cookies")) {
 // Oturumu sonlandır
 session_destroy();
 
-// Giriş sayfasına yönlendir
-header("Location: giris.php");
+// Tam URL yolu ile giriş sayfasına yönlendir
+$base_path = dirname($_SERVER['SCRIPT_NAME']);
+if ($base_path == '/' || $base_path == '\\') {
+    $base_path = '';
+}
+header("Location: $base_path/giris.php");
 exit;
 ?> 

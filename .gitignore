@@ -1,30 +1,37 @@
-# Hassas veri içeren dosyalar
-config.php
+# IDE & Editör dosyaları
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
 
 # Geçici dosyalar
+tmp/
+temp/
+logs/
 *.log
-*.tmp
-*.bak
-*.swp
 
-# IDE ve Editör dosyaları
-.vscode/
-.idea/
-*.sublime-*
-.DS_Store
+# Vendor klasörleri
+vendor/
+node_modules/
 
-# Composer
-/vendor/
+# Bağımlılık dosyaları
 composer.lock
+package-lock.json
 
-# Uploads klasörü (kullanıcı yüklemeleri)
-/uploads/
-/dosyalar/
+# Ortam değişkenleri ve hassas veriler
+.env
+.env.local
+.env.*.local
+config.local.php
 
-# Cache ve oturum dosyaları
-/cache/
-/sessions/
+# Yapılandırma dosyaları (Bu projeye özel ayarlayın)
+# config.php
 
-# Node modülleri
-/node_modules/
-package-lock.json 
+# Dosya yükleme dizinleri
+dosyalar/
+uploads/
+
+# Önbellek klasörleri
+cache/ 

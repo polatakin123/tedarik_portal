@@ -1,0 +1,389 @@
+/* Savunma Sanayii Panel Teması - Ortak CSS */
+:root {
+    --primary-color: #1a3a5f;      /* Koyu lacivert - ana renk */
+    --secondary-color: #36404a;    /* Koyu gri - ikincil renk */
+    --accent-color: #507093;       /* Mavi-gri - vurgu rengi */
+    --light-color: #f2f4f8;        /* Açık gri - arka plan rengi */
+    --text-color: #333;            /* Metin rengi */
+    --border-color: #d8dbe0;       /* Kenarlık rengi */
+    --success-color: #3c6a56;      /* Başarı rengi (koyu yeşil) */
+    --warning-color: #a17d32;      /* Uyarı rengi (koyu sarı) */
+    --danger-color: #8c3a3a;       /* Tehlike rengi (koyu kırmızı) */
+    --info-color: #3a5a7c;         /* Bilgi rengi (koyu mavi) */
+    --sidebar-width: 250px;        /* Sidebar genişliği */
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+body {
+    background-color: var(--light-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    border: none;
+    background-color: var(--primary-color);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-toggle i {
+    font-size: 1.5rem;
+}
+
+/* Sidebar Stili */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 9999;
+    padding: 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--primary-color);
+    width: var(--sidebar-width);
+    transition: all 0.3s ease;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    padding-top: 0.5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--accent-color);
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.15);
+    border-left: 3px solid #fff;
+}
+
+.sidebar .nav-link i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-heading {
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-heading h4 {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.sidebar-heading p {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-bottom: 0;
+}
+
+/* Ana İçerik Alanı */
+main {
+    margin-left: var(--sidebar-width);
+    padding: 0.5rem 1rem;
+    padding-top: 70px;
+    flex: 1 0 auto;
+    width: calc(100% - var(--sidebar-width));
+    position: relative;
+    background-color: var(--light-color);
+    transition: all 0.3s ease;
+    z-index: 10;
+    overflow-x: hidden;
+}
+
+/* Navbar Stili */
+.navbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: var(--sidebar-width);
+    z-index: 1030;
+    background-color: #fff !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    height: 60px;
+    transition: all 0.3s ease;
+}
+
+.navbar-toggler {
+    padding: 0.25rem 0.75rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+}
+
+/* Mobil uyumluluk için sidebar ve içerik düzeni */
+@media (max-width: 767.98px) {
+    .sidebar {
+        left: -250px;
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    main, .navbar {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    main {
+        padding: 0.5rem;
+        padding-top: 70px;
+    }
+}
+
+/* Tablet boyutu için ayarlamalar */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    :root {
+        --sidebar-width: 200px;
+    }
+    
+    .sidebar-heading h4 {
+        font-size: 1.25rem;
+    }
+    
+    .sidebar .nav-link {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    main {
+        width: calc(100% - 200px);
+    }
+}
+
+/* Kartlar */
+.card {
+    border: none;
+    margin-bottom: 1.5rem;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: #fff;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Kart Stilleri */
+.card-primary .card-header {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.card-secondary .card-header {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.card-success .card-header {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.card-info .card-header {
+    background-color: var(--info-color);
+    color: white;
+}
+
+.card-warning .card-header {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.card-danger .card-header {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* İstatistik Kartları */
+.card-counter {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 20px 10px;
+    background-color: #fff;
+    height: 100px;
+    border-radius: 0.25rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.card-counter i {
+    font-size: 3em;
+    opacity: 0.3;
+}
+
+.card-counter .count-numbers {
+    position: absolute;
+    right: 35px;
+    top: 20px;
+    font-size: 28px;
+    display: block;
+    font-weight: 600;
+}
+
+.card-counter .count-name {
+    position: absolute;
+    right: 35px;
+    top: 65px;
+    opacity: 0.8;
+    display: block;
+    font-size: 14px;
+}
+
+.card-counter.primary {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+.card-counter.secondary {
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+.card-counter.success {
+    background-color: var(--success-color);
+    color: #fff;
+}
+
+.card-counter.info {
+    background-color: var(--info-color);
+    color: #fff;
+}
+
+.card-counter.warning {
+    background-color: var(--warning-color);
+    color: #fff;
+}
+
+.card-counter.danger {
+    background-color: var(--danger-color);
+    color: #fff;
+}
+
+/* Tablolar */
+.table th {
+    font-weight: 600;
+    border-top: none;
+    background-color: #f8f9fa;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Bildirim Rozeti */
+.badge-notification {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    font-size: 0.75rem;
+}
+
+/* Footer */
+.footer {
+    position: relative;
+    margin-top: auto;
+    padding: 1rem 0;
+    background-color: white;
+    margin-left: var(--sidebar-width);
+}
+
+@media (max-width: 767.98px) {
+    .footer {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Responsive Tasarım */
+@media (min-width: 992px) {
+    .navbar-toggler {
+        display: none;
+    }
+}
+
+@media (min-width: 992px) {
+    .sidebar-toggle {
+        display: none;
+    }
+}
+
+/* Liste Ayarları */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Diğer ortak stil tanımları buraya eklenebilir */
+
+/* Raporlar Sayfası İçin Stiller */
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 60vh;
+    width: 100%;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+}
+
+.nav-pills .nav-link {
+    color: var(--secondary-color);
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: rgba(26, 58, 95, 0.1);
+} 

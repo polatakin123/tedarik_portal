@@ -1,12 +1,19 @@
 <?php
-// tedarikci/teslimatlarim.php - Tedarikçi teslimatları sayfası
+// tedarikci/teslimatlarim.php - Tedarikçinin teslimatları sayfası
 require_once '../config.php';
 tedarikciYetkisiKontrol();
+
+// Sayfa başlığını ayarla
+$page_title = "Teslimatlarım";
+
+// Header dosyasını dahil et
+include 'header.php';
 
 // Tedarikçi bilgilerini al
 $kullanici_id = $_SESSION['kullanici_id'];
 $tedarikci_sql = "SELECT t.* FROM tedarikciler t 
-                 WHERE t.id = (SELECT tedarikci_id FROM kullanici_tedarikci_iliskileri WHERE kullanici_id = ?)";
+                 INNER JOIN kullanici_tedarikci_iliskileri kti ON t.id = kti.tedarikci_id
+                 WHERE kti.kullanici_id = ?";
 $tedarikci_stmt = $db->prepare($tedarikci_sql);
 $tedarikci_stmt->execute([$kullanici_id]);
 $tedarikci = $tedarikci_stmt->fetch(PDO::FETCH_ASSOC);
@@ -170,301 +177,126 @@ try {
 // Okunmamış bildirimleri al
 $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teslimatlarım - Tedarikçi Paneli</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fc;
-        }
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #26c281;
-            width: 204px;
-        }
-        .sidebar-sticky {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            padding-top: 0.5rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        .sidebar-heading {
-            color: white;
-            text-align: center;
-            padding: 20px 0;
-        }
-        .sidebar-heading h4 {
-            margin-bottom: 0.25rem;
-            font-weight: 600;
-        }
-        main {
-            margin-left: 204px;
-            padding: 1.5rem;
-        }
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            height: 56px;
-            background-color: #fff !important;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .navbar-toggler {
-            padding: 0.25rem 0.75rem;
-            font-size: 1.25rem;
-            line-height: 1;
-            background-color: transparent;
-            border: 1px solid transparent;
-            border-radius: 0.25rem;
-        }
-        .card {
-            border: none;
-            margin-bottom: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .card-header {
-            padding: 0.75rem 1.25rem;
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-        }
-        .badge-notification {
-            position: absolute;
-            top: 0.2rem;
-            right: 0.2rem;
-            font-size: 0.75rem;
-        }
-        .table th, .table td {
-            padding: 0.75rem;
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <div class="sidebar-heading">
-            <h4>Tedarik Portalı</h4>
-            <p>Tedarikçi Paneli</p>
-        </div>
-        <div class="sidebar-sticky">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house-door"></i> Ana Sayfa
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparislerim.php">
-                        <i class="bi bi-list-check"></i> Siparişlerim
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparis_guncelle.php">
-                        <i class="bi bi-pencil-square"></i> Sipariş Güncelle
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="teslimatlarim.php">
-                        <i class="bi bi-truck"></i> Teslimatlarım
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="dokumanlar.php">
-                        <i class="bi bi-file-earmark-text"></i> Dokümanlar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="profil.php">
-                        <i class="bi bi-person"></i> Profilim
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link" href="../cikis.php">
-                        <i class="bi bi-box-arrow-right"></i> Çıkış Yap
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
 
-    <!-- Ana içerik -->
-    <main>
-        <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
-            <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">Teslimatlarım</span>
-                <div class="ms-auto d-flex">
-                    <div class="dropdown me-3">
-                        <a class="nav-link position-relative" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-bell fs-5"></i>
-                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"><?= $okunmamis_bildirim_sayisi ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Bildirimleri Gör</a></li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-1"></i> <?= htmlspecialchars($_SESSION['ad_soyad']) ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="profil.php">Profil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </nav>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Teslimatlarım</h2>
+    <a href="yeni_teslimat.php" class="btn btn-success"><i class="bi bi-plus-lg"></i> Yeni Teslimat</a>
+</div>
 
-        <!-- Filtreleme ve arama formu -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Filtreleme</h5>
+<!-- Filtreleme ve arama formu -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">Filtreleme</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="" class="row g-3">
+            <div class="col-md-3">
+                <label for="proje_id" class="form-label">Proje</label>
+                <select name="proje_id" id="proje_id" class="form-select">
+                    <option value="0">Tüm Projeler</option>
+                    <?php foreach ($projeler as $proje): ?>
+                        <option value="<?= $proje['id'] ?>" <?= $proje_id == $proje['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($proje['proje_adi']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div class="card-body">
-                <form method="get" action="" class="row g-3">
-                    <div class="col-md-3">
-                        <label for="proje_id" class="form-label">Proje</label>
-                        <select name="proje_id" id="proje_id" class="form-select">
-                            <option value="0">Tüm Projeler</option>
-                            <?php foreach ($projeler as $proje): ?>
-                                <option value="<?= $proje['id'] ?>" <?= $proje_id == $proje['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($proje['proje_adi']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="tarih_baslangic" class="form-label">Başlangıç Tarihi</label>
-                        <input type="date" class="form-control" id="tarih_baslangic" name="tarih_baslangic" value="<?= $tarih_baslangic ?>">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="tarih_bitis" class="form-label">Bitiş Tarihi</label>
-                        <input type="date" class="form-control" id="tarih_bitis" name="tarih_bitis" value="<?= $tarih_bitis ?>">
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Filtrele</button>
-                    </div>
-                </form>
+            <div class="col-md-3">
+                <label for="tarih_baslangic" class="form-label">Başlangıç Tarihi</label>
+                <input type="date" class="form-control" id="tarih_baslangic" name="tarih_baslangic" value="<?= $tarih_baslangic ?>">
             </div>
-        </div>
+            <div class="col-md-3">
+                <label for="tarih_bitis" class="form-label">Bitiş Tarihi</label>
+                <input type="date" class="form-control" id="tarih_bitis" name="tarih_bitis" value="<?= $tarih_bitis ?>">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        <!-- Teslimatlar tablosu -->
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="card-title mb-0">Teslimat Listesi</h5>
+<!-- Teslimatlar tablosu -->
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="card-title mb-0">Teslimat Listesi</h5>
+    </div>
+    <div class="card-body">
+        <?php if (empty($teslimatlar)): ?>
+            <div class="alert alert-info">
+                Herhangi bir teslimat kaydı bulunamadı.
             </div>
-            <div class="card-body">
-                <?php if (empty($teslimatlar)): ?>
-                    <div class="alert alert-info">
-                        Herhangi bir teslimat kaydı bulunamadı.
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Sipariş No</th>
-                                    <th>Parça No</th>
-                                    <th>Proje</th>
-                                    <th>Teslimat Tarihi</th>
-                                    <th>Miktar</th>
-                                    <th>İrsaliye No</th>
-                                    <th>Not</th>
-                                    <th>İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($teslimatlar as $teslimat): ?>
-                                    <tr>
-                                        <td>
-                                            <a href="siparis_detay.php?id=<?= $teslimat['siparis_id'] ?>">
-                                                <?= htmlspecialchars($teslimat['siparis_no']) ?>
-                                            </a>
-                                        </td>
-                                        <td><?= htmlspecialchars($teslimat['parca_no']) ?></td>
-                                        <td><?= htmlspecialchars($teslimat['proje_adi']) ?></td>
-                                        <td><?= date('d.m.Y', strtotime($teslimat['teslimat_tarihi'])) ?></td>
-                                        <td><?= $teslimat['teslim_edilen'] ?> <?= htmlspecialchars($teslimat['birim']) ?></td>
-                                        <td><?= htmlspecialchars($teslimat['irsaliye_no'] ?? '-') ?></td>
-                                        <td><?= htmlspecialchars(mb_substr($teslimat['teslimat_notu'] ?? '', 0, 30)) ?></td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="siparis_detay.php?id=<?= $teslimat['siparis_id'] ?>" class="btn btn-info" title="Sipariş Detayı">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="teslimat_detay.php?id=<?= $teslimat['id'] ?>" class="btn btn-primary" title="Teslimat Detayı">
-                                                    <i class="bi bi-info-circle"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Sayfalama -->
-                    <?php if ($toplam_sayfa > 1): ?>
-                        <nav aria-label="Teslimatlar sayfalama" class="mt-4">
-                            <ul class="pagination justify-content-center">
-                                <li class="page-item <?= $sayfa <= 1 ? 'disabled' : '' ?>">
-                                    <a class="page-link" href="?sayfa=<?= $sayfa - 1 ?><?= $filtered_query ?>" aria-label="Önceki">
-                                        <span aria-hidden="true">&laquo;</span>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Parça No</th>
+                            <th>Proje</th>
+                            <th>Teslimat Tarihi</th>
+                            <th>Miktar</th>
+                            <th>İrsaliye No</th>
+                            <th>Not</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($teslimatlar as $teslimat): ?>
+                            <tr>
+                                <td>
+                                    <a href="siparis_detay.php?id=<?= $teslimat['siparis_id'] ?>">
+                                        <?= htmlspecialchars($teslimat['siparis_no']) ?>
                                     </a>
-                                </li>
-                                <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
-                                    <li class="page-item <?= $i == $sayfa ? 'active' : '' ?>">
-                                        <a class="page-link" href="?sayfa=<?= $i ?><?= $filtered_query ?>"><?= $i ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                                <li class="page-item <?= $sayfa >= $toplam_sayfa ? 'disabled' : '' ?>">
-                                    <a class="page-link" href="?sayfa=<?= $sayfa + 1 ?><?= $filtered_query ?>" aria-label="Sonraki">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    <?php endif; ?>
-                <?php endif; ?>
+                                </td>
+                                <td><?= htmlspecialchars($teslimat['parca_no']) ?></td>
+                                <td><?= htmlspecialchars($teslimat['proje_adi']) ?></td>
+                                <td><?= date('d.m.Y', strtotime($teslimat['teslimat_tarihi'])) ?></td>
+                                <td><?= $teslimat['teslim_edilen'] ?> <?= htmlspecialchars($teslimat['birim']) ?></td>
+                                <td><?= htmlspecialchars($teslimat['irsaliye_no'] ?? '-') ?></td>
+                                <td><?= htmlspecialchars(mb_substr($teslimat['teslimat_notu'] ?? '', 0, 30)) ?></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="siparis_detay.php?id=<?= $teslimat['siparis_id'] ?>" class="btn btn-info" title="Sipariş Detayı">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="teslimat_detay.php?id=<?= $teslimat['id'] ?>" class="btn btn-primary" title="Teslimat Detayı">
+                                            <i class="bi bi-info-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-        </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+            <!-- Sayfalama -->
+            <?php if ($toplam_sayfa > 1): ?>
+                <nav aria-label="Teslimatlar sayfalama" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <?= $sayfa <= 1 ? 'disabled' : '' ?>">
+                            <a class="page-link" href="?sayfa=<?= $sayfa - 1 ?><?= $filtered_query ?>" aria-label="Önceki">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <?php for ($i = 1; $i <= $toplam_sayfa; $i++): ?>
+                            <li class="page-item <?= $i == $sayfa ? 'active' : '' ?>">
+                                <a class="page-link" href="?sayfa=<?= $i ?><?= $filtered_query ?>"><?= $i ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <li class="page-item <?= $sayfa >= $toplam_sayfa ? 'disabled' : '' ?>">
+                            <a class="page-link" href="?sayfa=<?= $sayfa + 1 ?><?= $filtered_query ?>" aria-label="Sonraki">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php
+include 'footer.php';
+?> 

@@ -3,6 +3,9 @@
 require_once '../config.php';
 adminYetkisiKontrol();
 
+// Sayfa başlığını ayarla
+$page_title = "Projeler";
+
 // Proje silme işlemi
 if (isset($_GET['sil']) && !empty($_GET['sil'])) {
     $proje_id = intval($_GET['sil']);
@@ -45,8 +48,8 @@ $arama_sorgu = '';
 $params = [];
 
 if (!empty($arama)) {
-    $arama_sorgu = " WHERE (p.proje_adi LIKE ? OR p.proje_kodu LIKE ? OR p.proje_yoneticisi LIKE ? OR p.aciklama LIKE ?)";
-    $params = ["%$arama%", "%$arama%", "%$arama%", "%$arama%"];
+    $arama_sorgu = " WHERE (p.proje_adi LIKE ? OR p.proje_kodu LIKE ? OR p.proje_aciklama LIKE ?)";
+    $params = ["%$arama%", "%$arama%", "%$arama%"];
 }
 
 // Projeleri getir
@@ -74,341 +77,166 @@ $bildirimler_sql = "SELECT b.*, s.siparis_no
 $bildirimler_stmt = $db->prepare($bildirimler_sql);
 $bildirimler_stmt->execute([$kullanici_id]);
 $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Header'ı dahil et
+include 'header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeler - Admin Paneli</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 48px 0 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #4e73df;
-            transition: all 0.3s;
-            width: 250px;
-        }
-        .sidebar-sticky {
-            position: relative;
-            top: 0;
-            height: calc(100vh - 48px);
-            padding-top: 0.5rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        main {
-            margin-left: 250px;
-            padding: 2rem;
-            padding-top: 70px;
-            transition: all 0.3s;
-        }
-        .navbar {
-            position: fixed;
-            top: 0;
-            right: 0;
-            left: 250px;
-            z-index: 99;
-            background-color: #fff !important;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-            height: 60px;
-        }
-        .card {
-            border: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-            margin-bottom: 1.5rem;
-        }
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-        }
-        .badge-notification {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            font-size: 0.75rem;
-        }
-        .table th, .table td {
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar col-md-3 col-lg-2 d-md-block text-white">
-        <div class="pt-3 text-center mb-4">
-            <h4>Tedarik Portalı</h4>
-            <p>Admin Paneli</p>
-        </div>
-        <div class="sidebar-sticky">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house-door"></i> Ana Sayfa
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparisler.php">
-                        <i class="bi bi-list-check"></i> Siparişler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="tedarikciler.php">
-                        <i class="bi bi-building"></i> Tedarikçiler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sorumlular.php">
-                        <i class="bi bi-people"></i> Sorumlular
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="projeler.php">
-                        <i class="bi bi-diagram-3"></i> Projeler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="kullanicilar.php">
-                        <i class="bi bi-person-badge"></i> Kullanıcılar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="raporlar.php">
-                        <i class="bi bi-graph-up"></i> Raporlar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="ayarlar.php">
-                        <i class="bi bi-gear"></i> Ayarlar
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link" href="../cikis.php">
-                        <i class="bi bi-box-arrow-right"></i> Çıkış Yap
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownBildirim" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-bell"></i>
-                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="badge rounded-pill bg-danger badge-notification"><?= $okunmamis_bildirim_sayisi ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownBildirim">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <?php foreach ($bildirimler as $bildirim): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="bildirim_goruntule.php?id=<?= $bildirim['id'] ?>">
-                                            <?= guvenli(mb_substr($bildirim['mesaj'], 0, 50)) ?>...
-                                            <div class="small text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></div>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
-                            <?php else: ?>
-                                <li><a class="dropdown-item text-center" href="#">Bildirim bulunmamaktadır</a></li>
-                            <?php endif; ?>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> <?= guvenli($_SESSION['ad_soyad']) ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
-                            <li><a class="dropdown-item" href="profil.php">Profilim</a></li>
-                            <li><a class="dropdown-item" href="ayarlar.php">Ayarlar</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
-                        </ul>
-                    </li>
-                </ul>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Projeler</h2>
+        <a href="proje_ekle.php" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Yeni Proje Ekle
+        </a>
+    </div>
+
+    <?php if (isset($_GET['mesaj'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($_GET['mesaj']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    </div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['hata'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?= htmlspecialchars($_GET['hata']) ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    </div>
+    <?php endif; ?>
+
+    <!-- Arama Formu -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="" method="GET" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" name="arama" placeholder="Proje adı, kodu veya yönetici adı ile arama yapın..." value="<?= htmlspecialchars($arama) ?>">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Ara</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Proje Listesi -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Proje Adı</th>
+                            <th>Proje Kodu</th>
+                            <th>Proje Yöneticisi</th>
+                            <th>Başlangıç Tarihi</th>
+                            <th>Bitiş Tarihi</th>
+                            <th>Siparişler</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (count($projeler) > 0): ?>
+                            <?php foreach ($projeler as $proje): ?>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold"><?= htmlspecialchars($proje['proje_adi']) ?></div>
+                                        <small class="text-muted"><?= $proje['proje_aciklama'] ? htmlspecialchars(mb_substr($proje['proje_aciklama'], 0, 50)) . '...' : '-' ?></small>
+                                    </td>
+                                    <td><?= htmlspecialchars($proje['proje_kodu']) ?></td>
+                                    <td><?= isset($proje['proje_yoneticisi']) ? htmlspecialchars($proje['proje_yoneticisi']) : '-' ?></td>
+                                    <td><?= $proje['baslangic_tarihi'] ? date('d.m.Y', strtotime($proje['baslangic_tarihi'])) : '-' ?></td>
+                                    <td><?= $proje['bitis_tarihi'] ? date('d.m.Y', strtotime($proje['bitis_tarihi'])) : '-' ?></td>
+                                    <td><span class="badge bg-primary"><?= $proje['siparis_sayisi'] ?></span></td>
+                                    <td>
+                                        <?php 
+                                            $bugun = date('Y-m-d');
+                                            $durum = '';
+                                            $durum_renk = '';
+                                            
+                                            if ($proje['bitis_tarihi'] && $proje['bitis_tarihi'] < $bugun) {
+                                                $durum = 'Tamamlandı';
+                                                $durum_renk = 'success';
+                                            } elseif ($proje['baslangic_tarihi'] && $proje['baslangic_tarihi'] > $bugun) {
+                                                $durum = 'Planlandı';
+                                                $durum_renk = 'warning';
+                                            } else {
+                                                $durum = 'Devam Ediyor';
+                                                $durum_renk = 'info';
+                                            }
+                                        ?>
+                                        <span class="badge bg-<?= $durum_renk ?>"><?= $durum ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="proje_detay.php?id=<?= $proje['id'] ?>" class="btn btn-info" title="Detay">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="proje_duzenle.php?id=<?= $proje['id'] ?>" class="btn btn-warning" title="Düzenle">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <?php if ($proje['siparis_sayisi'] == 0): ?>
+                                                <button type="button" class="btn btn-danger delete-btn" data-id="<?= $proje['id'] ?>" data-name="<?= htmlspecialchars($proje['proje_adi']) ?>" title="Sil">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="text-center">Proje bulunamadı.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </nav>
+    </div>
+</div>
 
-    <!-- Ana İçerik -->
-    <main>
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Projeler</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="proje_ekle.php" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Yeni Proje Ekle
-                    </a>
-                </div>
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Proje Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
             </div>
-
-            <?php if (isset($_GET['mesaj'])): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= guvenli($_GET['mesaj']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if (isset($_GET['hata'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= guvenli($_GET['hata']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                </div>
-            <?php endif; ?>
-
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form action="" method="get" class="row g-3">
-                        <div class="col-md-8">
-                            <div class="input-group">
-                                <input type="text" class="form-control" name="arama" placeholder="Proje adı, kodu veya yöneticisi ara..." value="<?= guvenli($arama) ?>">
-                                <button class="btn btn-outline-primary" type="submit">
-                                    <i class="bi bi-search"></i> Ara
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <?php if (!empty($arama)): ?>
-                                <a href="projeler.php" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle"></i> Filtreleri Temizle
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </form>
-                </div>
+            <div class="modal-body">
+                <p id="deleteConfirmText">Bu projeyi silmek istediğinize emin misiniz?</p>
             </div>
-
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Tüm Projeler (<?= count($projeler) ?>)</h5>
-                </div>
-                <div class="card-body">
-                    <?php if (count($projeler) > 0): ?>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Proje Adı</th>
-                                        <th>Proje Kodu</th>
-                                        <th>Proje Yöneticisi</th>
-                                        <th>Başlangıç Tarihi</th>
-                                        <th>Bitiş Tarihi</th>
-                                        <th>Sipariş Sayısı</th>
-                                        <th>Durum</th>
-                                        <th>İşlemler</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($projeler as $proje): ?>
-                                        <tr>
-                                            <td>
-                                                <a href="proje_detay.php?id=<?= $proje['id'] ?>" class="text-decoration-none fw-bold">
-                                                    <?= guvenli($proje['proje_adi']) ?>
-                                                </a>
-                                            </td>
-                                            <td><?= guvenli($proje['proje_kodu']) ?></td>
-                                            <td><?= isset($proje['proje_yoneticisi']) ? guvenli($proje['proje_yoneticisi']) : '-' ?></td>
-                                            <td><?= tarihFormatla($proje['baslangic_tarihi']) ?></td>
-                                            <td><?= $proje['bitis_tarihi'] ? tarihFormatla($proje['bitis_tarihi']) : '-' ?></td>
-                                            <td>
-                                                <?php if ($proje['siparis_sayisi'] > 0): ?>
-                                                    <a href="siparisler.php?proje_id=<?= $proje['id'] ?>" class="text-decoration-none">
-                                                        <?= $proje['siparis_sayisi'] ?> sipariş
-                                                    </a>
-                                                <?php else: ?>
-                                                    0 sipariş
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php 
-                                                if ($proje['aktif']) {
-                                                    $bugun = new DateTime();
-                                                    $baslangic = new DateTime($proje['baslangic_tarihi']);
-                                                    $bitis = !empty($proje['bitis_tarihi']) ? new DateTime($proje['bitis_tarihi']) : null;
-                                                    
-                                                    if ($baslangic > $bugun) {
-                                                        echo '<span class="badge bg-info">Planlandı</span>';
-                                                    } elseif ($bitis && $bitis < $bugun) {
-                                                        echo '<span class="badge bg-secondary">Tamamlandı</span>';
-                                                    } else {
-                                                        echo '<span class="badge bg-success">Devam Ediyor</span>';
-                                                    }
-                                                } else {
-                                                    echo '<span class="badge bg-danger">Pasif</span>';
-                                                }
-                                                ?>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="proje_detay.php?id=<?= $proje['id'] ?>" class="btn btn-sm btn-info">
-                                                        <i class="bi bi-eye"></i> Görüntüle
-                                                    </a>
-                                                    <a href="proje_duzenle.php?id=<?= $proje['id'] ?>" class="btn btn-sm btn-warning">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
-                                                    <?php if ($proje['siparis_sayisi'] == 0): ?>
-                                                        <a href="projeler.php?sil=<?= $proje['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('<?= guvenli($proje['proje_adi']) ?> projesini silmek istediğinize emin misiniz?');">
-                                                            <i class="bi bi-trash"></i>
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php else: ?>
-                        <div class="alert alert-info">
-                            <?php if (!empty($arama)): ?>
-                                <i class="bi bi-info-circle"></i> "<?= guvenli($arama) ?>" araması için sonuç bulunamadı.
-                            <?php else: ?>
-                                <i class="bi bi-info-circle"></i> Henüz proje bulunmamaktadır. Yeni proje ekleyebilirsiniz.
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <a href="#" id="deleteConfirmBtn" class="btn btn-danger">Sil</a>
             </div>
         </div>
-    </main>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+<script>
+    // Silme işlemi için onay modalını ayarla
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+        const deleteConfirmText = document.getElementById('deleteConfirmText');
+        
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                
+                deleteConfirmText.textContent = `"${name}" adlı projeyi silmek istediğinize emin misiniz?`;
+                deleteConfirmBtn.href = `projeler.php?sil=${id}`;
+                
+                deleteModal.show();
+            });
+        });
+    });
+</script>
+
+<?php include 'footer.php'; ?> 
