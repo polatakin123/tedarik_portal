@@ -64,6 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['siparis_duzenle'])) {
         $teslim_tarihi = empty($_POST['teslim_tarihi']) ? null : $_POST['teslim_tarihi'];
         $aciklama = trim($_POST['aciklama']);
         
+        // Yeni alanları da al
+        $fai = trim($_POST['fai']);
+        $satinalmaci = trim($_POST['satinalmaci']);
+        $alt_malzeme = trim($_POST['alt_malzeme']);
+        $onaylanan_revizyon = trim($_POST['onaylanan_revizyon']);
+        $tedarikci_parca_no = trim($_POST['tedarikci_parca_no']);
+        $vehicle_id = trim($_POST['vehicle_id']);
+        
         // Güncelleme sorgusunu hazırla
         $guncelle_sql = "UPDATE siparisler SET 
                           tedarikci_id = ?, 
@@ -75,7 +83,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['siparis_duzenle'])) {
                           miktar = ?, 
                           birim = ?, 
                           teslim_tarihi = ?, 
-                          aciklama = ?, 
+                          aciklama = ?,
+                          fai = ?,
+                          satinalmaci = ?,
+                          alt_malzeme = ?,
+                          onaylanan_revizyon = ?,
+                          tedarikci_parca_no = ?,
+                          vehicle_id = ?,
                           guncelleme_tarihi = NOW() 
                           WHERE id = ?";
         
@@ -90,7 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['siparis_duzenle'])) {
             $miktar, 
             $birim, 
             $teslim_tarihi, 
-            $aciklama, 
+            $aciklama,
+            $fai,
+            $satinalmaci,
+            $alt_malzeme,
+            $onaylanan_revizyon,
+            $tedarikci_parca_no,
+            $vehicle_id,
             $siparis_id
         ]);
         
@@ -227,6 +247,45 @@ include 'header.php';
                                     <option value="Set" <?= ($siparis['birim'] == 'Set') ? 'selected' : '' ?>>Set</option>
                                     <option value="Takım" <?= ($siparis['birim'] == 'Takım') ? 'selected' : '' ?>>Takım</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="fai" class="form-label">FAI</label>
+                                <input type="text" class="form-control" id="fai" name="fai" 
+                                       value="<?= guvenli($siparis['fai']) ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="satinalmaci" class="form-label">Satınalmacı</label>
+                                <input type="text" class="form-control" id="satinalmaci" name="satinalmaci" 
+                                       value="<?= guvenli($siparis['satinalmaci']) ?>">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="alt_malzeme" class="form-label">Alt Malzeme</label>
+                                <input type="text" class="form-control" id="alt_malzeme" name="alt_malzeme" 
+                                       value="<?= guvenli($siparis['alt_malzeme']) ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="onaylanan_revizyon" class="form-label">Onaylanan Revizyon</label>
+                                <input type="text" class="form-control" id="onaylanan_revizyon" name="onaylanan_revizyon" 
+                                       value="<?= guvenli($siparis['onaylanan_revizyon']) ?>">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="tedarikci_parca_no" class="form-label">Tedarikçi Parça No</label>
+                                <input type="text" class="form-control" id="tedarikci_parca_no" name="tedarikci_parca_no" 
+                                       value="<?= guvenli($siparis['tedarikci_parca_no']) ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vehicle_id" class="form-label">Vehicle ID</label>
+                                <input type="text" class="form-control" id="vehicle_id" name="vehicle_id" 
+                                       value="<?= guvenli($siparis['vehicle_id']) ?>">
                             </div>
                         </div>
 

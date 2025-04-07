@@ -15,6 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $birim = isset($_POST['birim']) ? trim($_POST['birim']) : '';
     $teslim_tarihi = isset($_POST['teslim_tarihi']) ? trim($_POST['teslim_tarihi']) : null;
     $aciklama = isset($_POST['aciklama']) ? trim($_POST['aciklama']) : '';
+    $fai = isset($_POST['fai']) ? trim($_POST['fai']) : '';
+    $satinalmaci = isset($_POST['satinalmaci']) ? trim($_POST['satinalmaci']) : '';
+    $alt_malzeme = isset($_POST['alt_malzeme']) ? trim($_POST['alt_malzeme']) : '';
+    $onaylanan_revizyon = isset($_POST['onaylanan_revizyon']) ? trim($_POST['onaylanan_revizyon']) : '';
+    $tedarikci_parca_no = isset($_POST['tedarikci_parca_no']) ? trim($_POST['tedarikci_parca_no']) : '';
+    $vehicle_id = isset($_POST['vehicle_id']) ? trim($_POST['vehicle_id']) : '';
     
     // Sipariş numarası oluşturma (Örnek: SIP-2023-0001)
     $yil = date('Y');
@@ -68,14 +74,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sql = "INSERT INTO siparisler (
                         siparis_no, tedarikci_id, proje_id, sorumlu_id, durum_id, 
                         parca_no, parca_adi, miktar, birim, teslim_tarihi, 
-                        aciklama, olusturan_id, olusturma_tarihi
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                        aciklama, olusturan_id, olusturma_tarihi,
+                        fai, satinalmaci, alt_malzeme, onaylanan_revizyon,
+                        tedarikci_parca_no, vehicle_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)";
             
             $stmt = $db->prepare($sql);
             $stmt->execute([
                 $siparis_no, $tedarikci_id, $proje_id, $sorumlu_id, $durum_id,
                 $parca_no, $parca_adi, $miktar, $birim, $teslim_tarihi,
-                $aciklama, $_SESSION['kullanici_id']
+                $aciklama, $_SESSION['kullanici_id'],
+                $fai, $satinalmaci, $alt_malzeme, $onaylanan_revizyon,
+                $tedarikci_parca_no, $vehicle_id
             ]);
             
             $siparis_id = $db->lastInsertId();
@@ -254,13 +264,43 @@ include 'header.php';
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="teslim_tarihi" class="form-label">Teslim Tarihi</label>
-                                <input type="date" class="form-control" id="teslim_tarihi" name="teslim_tarihi" value="<?= isset($teslim_tarihi) ? guvenli($teslim_tarihi) : '' ?>">
+                                <label for="fai" class="form-label">FAI</label>
+                                <input type="text" class="form-control" id="fai" name="fai" value="<?= isset($fai) ? guvenli($fai) : '' ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="satinalmaci" class="form-label">Satınalmacı</label>
+                                <input type="text" class="form-control" id="satinalmaci" name="satinalmaci" value="<?= isset($satinalmaci) ? guvenli($satinalmaci) : '' ?>">
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <div class="col-12">
+                            <div class="col-md-6">
+                                <label for="alt_malzeme" class="form-label">Alt Malzeme</label>
+                                <input type="text" class="form-control" id="alt_malzeme" name="alt_malzeme" value="<?= isset($alt_malzeme) ? guvenli($alt_malzeme) : '' ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="onaylanan_revizyon" class="form-label">Onaylanan Revizyon</label>
+                                <input type="text" class="form-control" id="onaylanan_revizyon" name="onaylanan_revizyon" value="<?= isset($onaylanan_revizyon) ? guvenli($onaylanan_revizyon) : '' ?>">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="tedarikci_parca_no" class="form-label">Tedarikçi Parça No</label>
+                                <input type="text" class="form-control" id="tedarikci_parca_no" name="tedarikci_parca_no" value="<?= isset($tedarikci_parca_no) ? guvenli($tedarikci_parca_no) : '' ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="vehicle_id" class="form-label">Vehicle ID</label>
+                                <input type="text" class="form-control" id="vehicle_id" name="vehicle_id" value="<?= isset($vehicle_id) ? guvenli($vehicle_id) : '' ?>">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="teslim_tarihi" class="form-label">Teslim Tarihi</label>
+                                <input type="date" class="form-control" id="teslim_tarihi" name="teslim_tarihi" value="<?= isset($teslim_tarihi) ? guvenli($teslim_tarihi) : '' ?>">
+                            </div>
+                            <div class="col-md-6">
                                 <label for="aciklama" class="form-label">Açıklama</label>
                                 <textarea class="form-control" id="aciklama" name="aciklama" rows="3"><?= isset($aciklama) ? guvenli($aciklama) : '' ?></textarea>
                             </div>

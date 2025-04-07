@@ -222,6 +222,12 @@ include 'header.php';
                             <th>Parça No</th>
                             <th>Tanım</th>
                             <th>Miktar</th>
+                            <th>FAI</th>
+                            <th>Satınalmacı</th>
+                            <th>Alt Malzeme</th>
+                            <th>Onaylanan Revizyon</th>
+                            <th>Tedarikçi Parça No</th>
+                            <th>Vehicle ID</th>
                             <th>Tarih</th>
                             <th>Teslim Tarihi</th>
                             <th>Durum</th>
@@ -239,6 +245,12 @@ include 'header.php';
                                 <td><?= guvenli($siparis['parca_no']) ?></td>
                                 <td><?= guvenli($siparis['tanim']) ?></td>
                                 <td><?= guvenli($siparis['miktar']) ?></td>
+                                <td><?= !empty($siparis['fai']) ? guvenli($siparis['fai']) : '-' ?></td>
+                                <td><?= !empty($siparis['satinalmaci']) ? guvenli($siparis['satinalmaci']) : '-' ?></td>
+                                <td><?= !empty($siparis['alt_malzeme']) ? guvenli($siparis['alt_malzeme']) : '-' ?></td>
+                                <td><?= !empty($siparis['onaylanan_revizyon']) ? guvenli($siparis['onaylanan_revizyon']) : '-' ?></td>
+                                <td><?= !empty($siparis['tedarikci_parca_no']) ? guvenli($siparis['tedarikci_parca_no']) : '-' ?></td>
+                                <td><?= !empty($siparis['vehicle_id']) ? guvenli($siparis['vehicle_id']) : '-' ?></td>
                                 <td><?= date('d.m.Y', strtotime($siparis['acilis_tarihi'])) ?></td>
                                 <td><?= $siparis['teslim_tarihi'] ? date('d.m.Y', strtotime($siparis['teslim_tarihi'])) : '-' ?></td>
                                 <td>

@@ -248,8 +248,52 @@ include 'header.php';
                             <p><?= guvenli($siparis['miktar']) ?> <?= guvenli($siparis['birim']) ?></p>
                         </div>
                         <div class="col-md-6">
+                            <p class="fw-bold mb-1">Açılış Tarihi:</p>
+                            <p><?= date('d.m.Y', strtotime($siparis['acilis_tarihi'])) ?></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">FAI:</p>
+                            <p><?= !empty($siparis['fai']) ? guvenli($siparis['fai']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Satınalmacı:</p>
+                            <p><?= !empty($siparis['satinalmaci']) ? guvenli($siparis['satinalmaci']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Alt Malzeme:</p>
+                            <p><?= !empty($siparis['alt_malzeme']) ? guvenli($siparis['alt_malzeme']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Onaylanan Revizyon:</p>
+                            <p><?= !empty($siparis['onaylanan_revizyon']) ? guvenli($siparis['onaylanan_revizyon']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Tedarikçi Parça No:</p>
+                            <p><?= !empty($siparis['tedarikci_parca_no']) ? guvenli($siparis['tedarikci_parca_no']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Vehicle ID:</p>
+                            <p><?= !empty($siparis['vehicle_id']) ? guvenli($siparis['vehicle_id']) : '<span class="text-muted">Belirtilmemiş</span>' ?></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             <p class="fw-bold mb-1">Teslim Tarihi:</p>
                             <p><?= $siparis['teslim_tarihi'] ? date('d.m.Y', strtotime($siparis['teslim_tarihi'])) : 'Belirtilmemiş' ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Miktar:</p>
+                            <p><?= guvenli($siparis['miktar']) ?> <?= guvenli($siparis['birim']) ?></p>
                         </div>
                     </div>
                     <div class="mb-3">
