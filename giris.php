@@ -1,91 +1,107 @@
 <?php
-// giris.php - Giriş sayfası
-require 'config.php';
+// giris.php - Kullanıcı giriş sayfası
+require_once 'config.php';
 
-// Zaten giriş yapmış kullanıcı varsa ana sayfaya yönlendir
+// Eğer kullanıcı zaten giriş yapmışsa yönlendir
 if (isset($_SESSION['giris']) && $_SESSION['giris'] === true) {
-    // Rol bazlı yönlendirme
-    switch ($_SESSION['rol']) {
-        case 'Admin':
-            header("Location: admin/index.php");
-            break;
-        case 'Sorumlu':
-            header("Location: sorumlu/index.php");
-            break;
-        case 'Tedarikci':
-            header("Location: tedarikci/index.php");
-            break;
-        default:
-            header("Location: index.php");
+    if ($_SESSION['rol'] === 'Admin' || $_SESSION['rol'] === 'Sorumlu') {
+        header("Location: admin/index.php");
+    } else if ($_SESSION['rol'] === 'Tedarikci') {
+        header("Location: tedarikci/index.php");
+    } else {
+        header("Location: index.php");
     }
     exit;
 }
 
-$hata = '';
+$hatalar = [];
+$giris = '';
+$sifre = '';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $kullanici_adi = $_POST['kullanici_adi'] ?? '';
-    $sifre = $_POST['sifre'] ?? '';
+// Form gönderildiğinde
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $giris = trim($_POST['giris'] ?? '');
+    $sifre = trim($_POST['sifre'] ?? '');
     
-    if ($kullanici_adi && $sifre) {
-        $stmt = $db->prepare("SELECT id, kullanici_adi, sifre, ad_soyad, rol FROM kullanicilar WHERE kullanici_adi = ?");
-        $stmt->execute([$kullanici_adi]);
-        
-        if ($kullanici = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            if (password_verify($sifre, $kullanici['sifre'])) {
-                // Oturum bilgilerini ayarla
+    // Validasyon
+    if (empty($giris)) {
+        $hatalar[] = "Kullanıcı adı veya e-posta adresi boş bırakılamaz";
+    }
+    
+    if (empty($sifre)) {
+        $hatalar[] = "Şifre boş bırakılamaz";
+    }
+    
+    // Hata yoksa giriş işlemi
+    if (empty($hatalar)) {
+        try {
+            // Kullanıcı adı veya e-posta ile sorgula
+            $giris_sql = "SELECT * FROM kullanicilar WHERE kullanici_adi = ? OR email = ?";
+            $giris_stmt = $db->prepare($giris_sql);
+            $giris_stmt->execute([$giris, $giris]);
+            $kullanici = $giris_stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($kullanici && password_verify($sifre, $kullanici['sifre'])) {
+                // Giriş başarılı
                 $_SESSION['giris'] = true;
                 $_SESSION['kullanici_id'] = $kullanici['id'];
                 $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
                 $_SESSION['ad_soyad'] = $kullanici['ad_soyad'];
                 $_SESSION['rol'] = $kullanici['rol'];
                 
-                // Son giriş zamanını güncelle
-                $update = $db->prepare("UPDATE kullanicilar SET son_giris = NOW() WHERE id = ?");
-                $update->execute([$kullanici['id']]);
-                
-                // Rol bazlı yönlendirme
-                switch ($kullanici['rol']) {
-                    case 'Admin':
-                        header("Location: admin/index.php");
-                        break;
-                    case 'Sorumlu':
-                        header("Location: sorumlu/index.php");
-                        break;
-                    case 'Tedarikci':
-                        header("Location: tedarikci/index.php");
-                        break;
-                    default:
-                        header("Location: index.php");
+                // Rolüne göre yönlendir
+                if ($kullanici['rol'] === 'Admin') {
+                    header("Location: admin/index.php");
+                } else if ($kullanici['rol'] === 'Sorumlu') {
+                    header("Location: sorumlu/index.php");
+                } else if ($kullanici['rol'] === 'Tedarikci') {
+                    header("Location: tedarikci/index.php");
+                } else {
+                    header("Location: index.php");
                 }
                 exit;
+            } else {
+                $hatalar[] = "Kullanıcı adı/e-posta veya şifre hatalı";
             }
+        } catch (PDOException $e) {
+            $hatalar[] = "Veritabanı hatası: " . $e->getMessage();
         }
-        $hata = 'Kullanıcı adı veya şifre hatalı!';
-    } else {
-        $hata = 'Lütfen tüm alanları doldurun!';
     }
 }
+
+// Tema rengini veritabanından al
+$tema_renk_sql = "SELECT tema_renk FROM ayarlar WHERE id = 1";
+$tema_renk_stmt = $db->prepare($tema_renk_sql);
+$tema_renk_stmt->execute();
+$tema_renk = $tema_renk_stmt->fetchColumn() ?: '#4e73df';
+
+// Site başlığını veritabanından al
+$site_basligi_sql = "SELECT site_basligi FROM ayarlar WHERE id = 1";
+$site_basligi_stmt = $db->prepare($site_basligi_sql);
+$site_basligi_stmt->execute();
+$site_basligi = $site_basligi_stmt->fetchColumn() ?: 'Tedarik Portalı';
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tedarik Portalı - Giriş</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>Giriş - <?= guvenli($site_basligi) ?></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         :root {
-            --primary-color: #1a3a5f;
-            --secondary-color: #36404a;
-            --light-color: #f2f4f8;
-            --border-color: #d8dbe0;
+            --bs-primary: <?= $tema_renk ?>;
+            --bs-primary-rgb: <?= implode(', ', sscanf($tema_renk, "#%02x%02x%02x")) ?>;
         }
         
         body {
-            background-color: var(--light-color);
-            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f8f9fc;
             height: 100vh;
             display: flex;
             align-items: center;
@@ -95,121 +111,113 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .login-container {
             max-width: 400px;
             width: 100%;
-            padding: 0 15px;
+            padding: 15px;
         }
         
         .card {
             border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            border-radius: 0.25rem;
-            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
         }
         
         .card-header {
-            background: var(--primary-color);
+            background-color: var(--bs-primary);
             color: white;
-            padding: 1.5rem;
-            border-radius: 0 !important;
             text-align: center;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 1.5rem;
         }
         
         .card-body {
             padding: 2rem;
         }
         
-        .form-label {
-            font-weight: 500;
-            color: var(--secondary-color);
+        .btn-primary {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
         }
         
-        .form-control {
-            border-color: var(--border-color);
-            padding: 0.75rem 1rem;
+        .btn-primary:hover {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary);
+            opacity: 0.9;
         }
         
         .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(26, 58, 95, 0.25);
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            padding: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .btn-primary:hover, .btn-primary:focus {
-            background-color: #122a47;
-            border-color: #122a47;
-        }
-        
-        .copyright {
-            color: #6c757d;
-            font-size: 0.875rem;
-            margin-top: 1.5rem;
-            text-align: center;
-        }
-        
-        .forgot-password {
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-        
-        .forgot-password:hover {
-            text-decoration: underline;
-        }
-        
-        .logo {
-            max-width: 200px;
-            margin: 0 auto 1.5rem;
-            display: block;
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="text-center mb-4">
-            <img src="assets/img/logo.png" alt="Tedarik Portalı" class="logo">
-        </div>
         <div class="card">
             <div class="card-header">
-                <h4 class="mb-0">Tedarik Portalı</h4>
+                <h4 class="mb-0"><?= guvenli($site_basligi) ?></h4>
+                <p class="mb-0">Tedarikçi ve Sipariş Yönetim Sistemi</p>
             </div>
             <div class="card-body">
-                <?php if ($hata): ?>
-                    <div class="alert alert-danger"><?= guvenli($hata) ?></div>
+                <?php if (!empty($hatalar)): ?>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <?php foreach ($hatalar as $hata): ?>
+                                <li><?= $hata ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                 <?php endif; ?>
                 
-                <form method="post">
+                <form method="post" action="" class="needs-validation" novalidate>
                     <div class="mb-3">
-                        <label for="kullanici_adi" class="form-label">Kullanıcı Adı</label>
+                        <label for="giris" class="form-label">Kullanıcı Adı veya E-posta</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" class="form-control" id="kullanici_adi" name="kullanici_adi" required>
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="giris" name="giris" value="<?= guvenli($giris) ?>" required>
+                            <div class="invalid-feedback">Kullanıcı adı veya e-posta adresi gereklidir.</div>
                         </div>
                     </div>
+                    
                     <div class="mb-4">
                         <label for="sifre" class="form-label">Şifre</label>
                         <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
                             <input type="password" class="form-control" id="sifre" name="sifre" required>
+                            <div class="invalid-feedback">Şifre gereklidir.</div>
                         </div>
                     </div>
+                    
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">GİRİŞ YAP</button>
+                        <button type="submit" class="btn btn-primary btn-lg">Giriş Yap</button>
                     </div>
                 </form>
-                
-                <div class="text-center mt-3">
-                    <a href="sifremi_unuttum.php" class="forgot-password">Şifremi Unuttum</a>
-                </div>
             </div>
         </div>
-        <div class="copyright">
-            &copy; <?= date('Y') ?> Tedarik Portalı - Tüm hakları saklıdır.
-        </div>
     </div>
+    
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Form doğrulama için Bootstrap validation
+        (function () {
+            'use strict'
+            
+            // Tüm formları seçin
+            var forms = document.querySelectorAll('.needs-validation')
+            
+            // Doğrulama yapmak için döngü
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
 </body>
 </html> 

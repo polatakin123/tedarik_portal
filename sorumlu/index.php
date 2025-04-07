@@ -151,7 +151,7 @@ include 'header.php';
                             <h2 class="mt-2 mb-0"><?= $tedarikci_sayisi ?></h2>
                         </div>
                         <div>
-                            <i class="bi bi-building fs-1"></i>
+                            <i class="bi bi-shop fs-1"></i>
                         </div>
                     </div>
                 </div>
@@ -289,8 +289,8 @@ include 'header.php';
                                     <h5 class="card-title"><?= guvenli($tedarikci['firma_adi']) ?></h5>
                                     <h6 class="card-subtitle mb-2 text-muted"><?= guvenli($tedarikci['firma_kodu'] ?? '-') ?></h6>
                                     <p class="card-text">
-                                        <i class="bi bi-envelope me-2"></i><?= guvenli($tedarikci['email'] ?? '-') ?><br>
-                                        <i class="bi bi-telephone me-2"></i><?= guvenli($tedarikci['telefon'] ?? '-') ?>
+                                        <i class="bi bi-envelope-fill me-2"></i><?= guvenli($tedarikci['email'] ?? '-') ?><br>
+                                        <i class="bi bi-telephone-fill me-2"></i><?= guvenli($tedarikci['telefon'] ?? '-') ?>
                                     </p>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="badge bg-primary"><?= $tedarikci['siparis_sayisi'] ?> Sipariş</span>

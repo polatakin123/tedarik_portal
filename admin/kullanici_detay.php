@@ -76,7 +76,7 @@ $siparisler_stmt->execute($siparis_param);
 $siparisler = $siparisler_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Okunmamış bildirim sayısını al
-$okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $_SESSION['kullanici_id']);
+$okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
 
 // Son 5 bildirimi al
 $bildirimler_sql = "SELECT b.*, s.siparis_no
@@ -86,7 +86,7 @@ $bildirimler_sql = "SELECT b.*, s.siparis_no
                    ORDER BY b.bildirim_tarihi DESC
                    LIMIT 5";
 $bildirimler_stmt = $db->prepare($bildirimler_sql);
-$bildirimler_stmt->execute([$_SESSION['kullanici_id']]);
+$bildirimler_stmt->execute([$kullanici_id]);
 $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Duruma göre renk sınıfı belirle
@@ -110,485 +110,294 @@ function rolTurkce($rol) {
         default: return $rol;
     }
 }
+
+// Header'ı dahil et
+include 'header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kullanıcı Detayı: <?= guvenli($kullanici['ad_soyad']) ?> - Admin Paneli</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 48px 0 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #4e73df;
-            transition: all 0.3s;
-            width: 250px;
-        }
-        .sidebar-sticky {
-            position: relative;
-            top: 0;
-            height: calc(100vh - 48px);
-            padding-top: 0.5rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        main {
-            margin-left: 250px;
-            padding: 2rem;
-            padding-top: 70px;
-            transition: all 0.3s;
-        }
-        .navbar {
-            position: fixed;
-            top: 0;
-            right: 0;
-            left: 250px;
-            z-index: 99;
-            background-color: #fff !important;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-            height: 60px;
-        }
-        .card {
-            border: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            margin-bottom: 1.5rem;
-        }
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-            background-color: #f8f9fc !important;
-        }
-        .badge-notification {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            font-size: 0.75rem;
-        }
-        .btn-xs {
-            padding: .125rem .25rem;
-            font-size: .75rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar col-md-3 col-lg-2 d-md-block text-white">
-        <div class="pt-3 text-center mb-4">
-            <h4>Tedarik Portalı</h4>
-            <p>Admin Paneli</p>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            Kullanıcı: <?= guvenli($kullanici['ad_soyad']) ?>
+            <span class="badge <?= $kullanici['aktif'] ? 'bg-success' : 'bg-danger' ?>">
+                <?= $kullanici['aktif'] ? 'Aktif' : 'Pasif' ?>
+            </span>
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="kullanicilar.php" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Kullanıcılara Dön
+            </a>
+            <a href="kullanici_duzenle.php?id=<?= $kullanici_id ?>" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i> Düzenle
+            </a>
         </div>
-        <div class="sidebar-sticky">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house-door"></i> Ana Sayfa
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="siparisler.php">
-                        <i class="bi bi-list-check"></i> Siparişler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="tedarikciler.php">
-                        <i class="bi bi-building"></i> Tedarikçiler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sorumlular.php">
-                        <i class="bi bi-people"></i> Sorumlular
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="projeler.php">
-                        <i class="bi bi-diagram-3"></i> Projeler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="kullanicilar.php">
-                        <i class="bi bi-person-badge"></i> Kullanıcılar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="raporlar.php">
-                        <i class="bi bi-graph-up"></i> Raporlar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="ayarlar.php">
-                        <i class="bi bi-gear"></i> Ayarlar
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link" href="../cikis.php">
-                        <i class="bi bi-box-arrow-right"></i> Çıkış Yap
-                    </a>
-                </li>
-            </ul>
+    </div>
+
+    <?php if (isset($_GET['mesaj'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?= guvenli($_GET['mesaj']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
         </div>
-    </nav>
+    <?php endif; ?>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownBildirim" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-bell"></i>
-                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="badge rounded-pill bg-danger badge-notification"><?= $okunmamis_bildirim_sayisi ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownBildirim">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <?php foreach ($bildirimler as $bildirim): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="bildirim_goruntule.php?id=<?= $bildirim['id'] ?>">
-                                            <?= guvenli(mb_substr($bildirim['mesaj'], 0, 50)) ?>...
-                                            <div class="small text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></div>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
-                            <?php else: ?>
-                                <li><a class="dropdown-item text-center" href="#">Bildirim bulunmamaktadır</a></li>
-                            <?php endif; ?>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> <?= guvenli($_SESSION['ad_soyad']) ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
-                            <li><a class="dropdown-item" href="profil.php">Profilim</a></li>
-                            <li><a class="dropdown-item" href="ayarlar.php">Ayarlar</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+    <?php if (isset($_GET['hata'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= guvenli($_GET['hata']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
         </div>
-    </nav>
+    <?php endif; ?>
 
-    <!-- Ana İçerik -->
-    <main>
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">
-                    Kullanıcı: <?= guvenli($kullanici['ad_soyad']) ?>
-                    <span class="badge <?= $kullanici['aktif'] ? 'bg-success' : 'bg-danger' ?>">
-                        <?= $kullanici['aktif'] ? 'Aktif' : 'Pasif' ?>
-                    </span>
-                </h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="kullanicilar.php" class="btn btn-sm btn-outline-secondary me-2">
-                        <i class="bi bi-arrow-left"></i> Kullanıcılara Dön
-                    </a>
-                    <a href="kullanici_duzenle.php?id=<?= $kullanici_id ?>" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-pencil"></i> Düzenle
-                    </a>
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Kullanıcı Bilgileri Kartı -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Kullanıcı Bilgileri</h5>
+                    <div>
+                        <span class="badge <?= $kullanici['aktif'] ? 'bg-success' : 'bg-danger' ?>">
+                            <?= $kullanici['aktif'] ? 'Aktif' : 'Pasif' ?>
+                        </span>
+                        <span class="badge bg-primary ms-1">
+                            <?= rolTurkce($kullanici['rol']) ?>
+                        </span>
+                    </div>
                 </div>
-            </div>
-
-            <?php if (isset($_GET['mesaj'])): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?= guvenli($_GET['mesaj']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                </div>
-            <?php endif; ?>
-
-            <?php if (isset($_GET['hata'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <?= guvenli($_GET['hata']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                </div>
-            <?php endif; ?>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <!-- Kullanıcı Bilgileri Kartı -->
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Kullanıcı Bilgileri</h5>
-                            <div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Ad Soyad:</p>
+                            <p><?= guvenli($kullanici['ad_soyad']) ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Kullanıcı Adı:</p>
+                            <p><?= guvenli($kullanici['kullanici_adi']) ?></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">E-posta:</p>
+                            <p><?= guvenli($kullanici['email']) ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Telefon:</p>
+                            <p><?= !empty($kullanici['telefon']) ? guvenli($kullanici['telefon']) : '-' ?></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Rol:</p>
+                            <p><?= rolTurkce($kullanici['rol']) ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Durum:</p>
+                            <p>
                                 <span class="badge <?= $kullanici['aktif'] ? 'bg-success' : 'bg-danger' ?>">
                                     <?= $kullanici['aktif'] ? 'Aktif' : 'Pasif' ?>
                                 </span>
-                                <span class="badge bg-primary ms-1">
-                                    <?= rolTurkce($kullanici['rol']) ?>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Ad Soyad:</p>
-                                    <p><?= guvenli($kullanici['ad_soyad']) ?></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Kullanıcı Adı:</p>
-                                    <p><?= guvenli($kullanici['kullanici_adi']) ?></p>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">E-posta:</p>
-                                    <p><?= guvenli($kullanici['email']) ?></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Telefon:</p>
-                                    <p><?= !empty($kullanici['telefon']) ? guvenli($kullanici['telefon']) : '-' ?></p>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Rol:</p>
-                                    <p><?= rolTurkce($kullanici['rol']) ?></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Durum:</p>
-                                    <p>
-                                        <span class="badge <?= $kullanici['aktif'] ? 'bg-success' : 'bg-danger' ?>">
-                                            <?= $kullanici['aktif'] ? 'Aktif' : 'Pasif' ?>
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Kayıt Tarihi:</p>
-                                    <p><?= date('d.m.Y', strtotime($kullanici['olusturma_tarihi'])) ?></p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p class="fw-bold mb-1">Son Giriş:</p>
-                                    <p><?= $kullanici['son_giris'] ? date('d.m.Y H:i', strtotime($kullanici['son_giris'])) : 'Henüz giriş yapmadı' ?></p>
-                                </div>
-                            </div>
-                            
-                            <?php if ($kullanici['rol'] == 'Tedarikci' && $firma_bilgisi): ?>
-                                <div class="mt-4 mb-3">
-                                    <p class="fw-bold mb-2">Tedarikçi Firma Bilgisi:</p>
-                                    <div class="p-3 bg-light rounded">
-                                        <p class="mb-1">
-                                            <span class="fw-bold">Firma Adı:</span> 
-                                            <a href="tedarikci_detay.php?id=<?= $firma_bilgisi['id'] ?>" class="text-decoration-none">
-                                                <?= guvenli($firma_bilgisi['firma_adi']) ?>
-                                            </a>
-                                            <span class="badge <?= $firma_bilgisi['aktif'] ? 'bg-success' : 'bg-danger' ?> ms-2">
-                                                <?= $firma_bilgisi['aktif'] ? 'Aktif' : 'Pasif' ?>
-                                            </span>
-                                        </p>
-                                        <p class="mb-1"><span class="fw-bold">Firma Kodu:</span> <?= guvenli($firma_bilgisi['firma_kodu']) ?></p>
-                                        <?php if (!empty($firma_bilgisi['yetkili_kisi'])): ?>
-                                            <p class="mb-1"><span class="fw-bold">Yetkili Kişi:</span> <?= guvenli($firma_bilgisi['yetkili_kisi']) ?></p>
-                                        <?php endif; ?>
-                                        <?php if (!empty($firma_bilgisi['telefon'])): ?>
-                                            <p class="mb-0"><span class="fw-bold">Telefon:</span> <?= guvenli($firma_bilgisi['telefon']) ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
+                            </p>
                         </div>
                     </div>
-
-                    <?php if ($kullanici['rol'] == 'Sorumlu' && count($sorumlu_oldugu_tedarikciler) > 0): ?>
-                        <!-- Sorumlu Olduğu Tedarikçiler Kartı -->
-                        <div class="card mb-4">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Sorumlu Olduğu Tedarikçiler</h5>
-                                <a href="sorumlu_tedarikciler.php?sorumlu_id=<?= $kullanici_id ?>" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-pencil"></i> Düzenle
-                                </a>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Firma Adı</th>
-                                                <th>Firma Kodu</th>
-                                                <th>Durum</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($sorumlu_oldugu_tedarikciler as $tedarikci): ?>
-                                                <tr>
-                                                    <td><?= guvenli($tedarikci['firma_adi']) ?></td>
-                                                    <td><?= guvenli($tedarikci['firma_kodu']) ?></td>
-                                                    <td>
-                                                        <span class="badge <?= $tedarikci['aktif'] ? 'bg-success' : 'bg-danger' ?>">
-                                                            <?= $tedarikci['aktif'] ? 'Aktif' : 'Pasif' ?>
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <a href="tedarikci_detay.php?id=<?= $tedarikci['id'] ?>" class="btn btn-xs btn-outline-info">
-                                                            <i class="bi bi-eye"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Kayıt Tarihi:</p>
+                            <p><?= date('d.m.Y', strtotime($kullanici['olusturma_tarihi'])) ?></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="fw-bold mb-1">Son Giriş:</p>
+                            <p><?= $kullanici['son_giris'] ? date('d.m.Y H:i', strtotime($kullanici['son_giris'])) : 'Henüz giriş yapmadı' ?></p>
+                        </div>
+                    </div>
+                    
+                    <?php if ($kullanici['rol'] == 'Tedarikci' && $firma_bilgisi): ?>
+                        <div class="mt-4 mb-3">
+                            <p class="fw-bold mb-2">Tedarikçi Firma Bilgisi:</p>
+                            <div class="p-3 bg-light rounded">
+                                <p class="mb-1">
+                                    <span class="fw-bold">Firma Adı:</span> 
+                                    <a href="tedarikci_detay.php?id=<?= $firma_bilgisi['id'] ?>" class="text-decoration-none">
+                                        <?= guvenli($firma_bilgisi['firma_adi']) ?>
+                                    </a>
+                                    <span class="badge <?= $firma_bilgisi['aktif'] ? 'bg-success' : 'bg-danger' ?> ms-2">
+                                        <?= $firma_bilgisi['aktif'] ? 'Aktif' : 'Pasif' ?>
+                                    </span>
+                                </p>
+                                <p class="mb-1"><span class="fw-bold">Firma Kodu:</span> <?= guvenli($firma_bilgisi['firma_kodu']) ?></p>
+                                <?php if (!empty($firma_bilgisi['yetkili_kisi'])): ?>
+                                    <p class="mb-1"><span class="fw-bold">Yetkili Kişi:</span> <?= guvenli($firma_bilgisi['yetkili_kisi']) ?></p>
+                                <?php endif; ?>
+                                <?php if (!empty($firma_bilgisi['telefon'])): ?>
+                                    <p class="mb-0"><span class="fw-bold">Telefon:</span> <?= guvenli($firma_bilgisi['telefon']) ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endif; ?>
                 </div>
-                
-                <div class="col-md-6">
-                    <!-- Son Siparişler Kartı -->
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <?php if ($kullanici['rol'] == 'Tedarikci'): ?>
-                                    Firma Siparişleri
-                                <?php elseif ($kullanici['rol'] == 'Sorumlu'): ?>
-                                    Sorumlu Olduğu Siparişler
-                                <?php else: ?>
-                                    Oluşturduğu Siparişler
-                                <?php endif; ?>
-                            </h5>
-                            <a href="siparisler.php?<?= $kullanici['rol'] == 'Sorumlu' ? 'sorumlu_id=' : 'olusturan_id=' ?><?= $kullanici_id ?>" class="btn btn-sm btn-primary">
-                                Tümünü Gör
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <?php if (count($siparisler) > 0): ?>
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Sipariş No</th>
-                                                <?php if ($kullanici['rol'] != 'Tedarikci'): ?>
-                                                    <th>Tedarikçi</th>
-                                                <?php endif; ?>
-                                                <th>Proje</th>
-                                                <th>Durum</th>
-                                                <th>Tarih</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($siparisler as $siparis): ?>
-                                                <?php $durum_rengi = durumRengiGetir($siparis['durum_id']); ?>
-                                                <tr>
-                                                    <td>
-                                                        <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="text-decoration-none">
-                                                            <?= guvenli($siparis['siparis_no']) ?>
-                                                        </a>
-                                                    </td>
-                                                    <?php if ($kullanici['rol'] != 'Tedarikci'): ?>
-                                                        <td><?= guvenli($siparis['tedarikci_adi']) ?></td>
-                                                    <?php endif; ?>
-                                                    <td><?= guvenli($siparis['proje_kodu']) ?></td>
-                                                    <td>
-                                                        <span class="badge bg-<?= $durum_rengi ?>">
-                                                            <?= guvenli($siparis['durum_adi']) ?>
-                                                        </span>
-                                                    </td>
-                                                    <td><?= date('d.m.Y', strtotime($siparis['olusturma_tarihi'])) ?></td>
-                                                    <td>
-                                                        <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-xs btn-outline-info">
-                                                            <i class="bi bi-eye"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            <?php else: ?>
-                                <p class="text-center text-muted my-3">
-                                    <?php if ($kullanici['rol'] == 'Tedarikci'): ?>
-                                        Bu tedarikçi firmanın henüz siparişi bulunmamaktadır.
-                                    <?php elseif ($kullanici['rol'] == 'Sorumlu'): ?>
-                                        Bu sorumluya atanmış sipariş bulunmamaktadır.
-                                    <?php else: ?>
-                                        Bu kullanıcı henüz sipariş oluşturmamış.
-                                    <?php endif; ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+            </div>
 
-                    <!-- Giriş Geçmişi ve Sistem Aktiviteleri (Demo) -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">Son Aktiviteler</h5>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-group list-group-flush">
-                                <?php if ($kullanici['son_giris']): ?>
-                                    <li class="list-group-item">
-                                        <i class="bi bi-box-arrow-in-right text-primary me-2"></i>
-                                        <strong>Sistem Girişi</strong>
-                                        <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime($kullanici['son_giris'])) ?></small>
-                                    </li>
-                                <?php endif; ?>
-                                <!-- Demo aktiviteler -->
-                                <li class="list-group-item">
-                                    <i class="bi bi-eye text-info me-2"></i>
-                                    <strong>Sipariş Görüntüleme</strong> - #SP<?= date('Y') ?>001
-                                    <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-1 day')) ?></small>
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="bi bi-file-earmark-text text-success me-2"></i>
-                                    <strong>Sipariş Dosya İndirildi</strong> - #SP<?= date('Y') ?>002.pdf
-                                    <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-3 day')) ?></small>
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="bi bi-pen text-warning me-2"></i>
-                                    <strong>Profil Güncellemesi</strong>
-                                    <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-5 day')) ?></small>
-                                </li>
-                                <li class="list-group-item">
-                                    <i class="bi bi-box-arrow-in-right text-primary me-2"></i>
-                                    <strong>Sistem Girişi</strong>
-                                    <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-7 day')) ?></small>
-                                </li>
-                            </ul>
+            <?php if ($kullanici['rol'] == 'Sorumlu' && count($sorumlu_oldugu_tedarikciler) > 0): ?>
+                <!-- Sorumlu Olduğu Tedarikçiler Kartı -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Sorumlu Olduğu Tedarikçiler</h5>
+                        <a href="sorumlu_tedarikciler.php?sorumlu_id=<?= $kullanici_id ?>" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i> Düzenle
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Firma Adı</th>
+                                        <th>Firma Kodu</th>
+                                        <th>Durum</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($sorumlu_oldugu_tedarikciler as $tedarikci): ?>
+                                        <tr>
+                                            <td><?= guvenli($tedarikci['firma_adi']) ?></td>
+                                            <td><?= guvenli($tedarikci['firma_kodu']) ?></td>
+                                            <td>
+                                                <span class="badge <?= $tedarikci['aktif'] ? 'bg-success' : 'bg-danger' ?>">
+                                                    <?= $tedarikci['aktif'] ? 'Aktif' : 'Pasif' ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="tedarikci_detay.php?id=<?= $tedarikci['id'] ?>" class="btn btn-xs btn-outline-info">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            <?php endif; ?>
+        </div>
+        
+        <div class="col-md-6">
+            <!-- Son Siparişler Kartı -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <?php if ($kullanici['rol'] == 'Tedarikci'): ?>
+                            Firma Siparişleri
+                        <?php elseif ($kullanici['rol'] == 'Sorumlu'): ?>
+                            Sorumlu Olduğu Siparişler
+                        <?php else: ?>
+                            Oluşturduğu Siparişler
+                        <?php endif; ?>
+                    </h5>
+                    <a href="siparisler.php?<?= $kullanici['rol'] == 'Sorumlu' ? 'sorumlu_id=' : 'olusturan_id=' ?><?= $kullanici_id ?>" class="btn btn-sm btn-primary">
+                        Tümünü Gör
+                    </a>
+                </div>
+                <div class="card-body">
+                    <?php if (count($siparisler) > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sipariş No</th>
+                                        <?php if ($kullanici['rol'] != 'Tedarikci'): ?>
+                                            <th>Tedarikçi</th>
+                                        <?php endif; ?>
+                                        <th>Proje</th>
+                                        <th>Durum</th>
+                                        <th>Tarih</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($siparisler as $siparis): ?>
+                                        <?php $durum_rengi = durumRengiGetir($siparis['durum_id']); ?>
+                                        <tr>
+                                            <td>
+                                                <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="text-decoration-none">
+                                                    <?= guvenli($siparis['siparis_no']) ?>
+                                                </a>
+                                            </td>
+                                            <?php if ($kullanici['rol'] != 'Tedarikci'): ?>
+                                                <td><?= guvenli($siparis['tedarikci_adi']) ?></td>
+                                            <?php endif; ?>
+                                            <td><?= guvenli($siparis['proje_kodu']) ?></td>
+                                            <td>
+                                                <span class="badge bg-<?= $durum_rengi ?>">
+                                                    <?= guvenli($siparis['durum_adi']) ?>
+                                                </span>
+                                            </td>
+                                            <td><?= date('d.m.Y', strtotime($siparis['olusturma_tarihi'])) ?></td>
+                                            <td>
+                                                <a href="siparis_detay.php?id=<?= $siparis['id'] ?>" class="btn btn-xs btn-outline-info">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-center text-muted my-3">
+                            <?php if ($kullanici['rol'] == 'Tedarikci'): ?>
+                                Bu tedarikçi firmanın henüz siparişi bulunmamaktadır.
+                            <?php elseif ($kullanici['rol'] == 'Sorumlu'): ?>
+                                Bu sorumluya atanmış sipariş bulunmamaktadır.
+                            <?php else: ?>
+                                Bu kullanıcı henüz sipariş oluşturmamış.
+                            <?php endif; ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Giriş Geçmişi ve Sistem Aktiviteleri (Demo) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Son Aktiviteler</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <?php if ($kullanici['son_giris']): ?>
+                            <li class="list-group-item">
+                                <i class="bi bi-box-arrow-in-right text-primary me-2"></i>
+                                <strong>Sistem Girişi</strong>
+                                <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime($kullanici['son_giris'])) ?></small>
+                            </li>
+                        <?php endif; ?>
+                        <!-- Demo aktiviteler -->
+                        <li class="list-group-item">
+                            <i class="bi bi-eye text-info me-2"></i>
+                            <strong>Sipariş Görüntüleme</strong> - #SP<?= date('Y') ?>001
+                            <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-1 day')) ?></small>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-file-earmark-text text-success me-2"></i>
+                            <strong>Sipariş Dosya İndirildi</strong> - #SP<?= date('Y') ?>002.pdf
+                            <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-3 day')) ?></small>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-pen text-warning me-2"></i>
+                            <strong>Profil Güncellemesi</strong>
+                            <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-5 day')) ?></small>
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-box-arrow-in-right text-primary me-2"></i>
+                            <strong>Sistem Girişi</strong>
+                            <small class="text-muted float-end"><?= date('d.m.Y H:i', strtotime('-7 day')) ?></small>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </main>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html> 
+<?php
+// Footer'ı dahil et
+include 'footer.php';
+?> 

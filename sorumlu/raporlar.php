@@ -33,18 +33,29 @@ if (count($tedarikci_idleri) > 0) {
     $in = str_repeat('?,', count($tedarikci_idleri) - 1) . '?';
     $params = array_merge($tedarikci_idleri, [$sorumlu_id]);
 } else {
+    // Tedarikçi yoksa sadece sorumlu_id ile sorgula
     $in = '?';
     $params = [$sorumlu_id];
 }
 
 // Projeleri al
-$projeler_sql = "SELECT DISTINCT p.id, p.proje_adi
-                FROM projeler p
-                INNER JOIN siparisler s ON p.id = s.proje_id
-                WHERE s.tedarikci_id IN ($in) OR s.sorumlu_id = ?
-                ORDER BY p.proje_adi";
-$projeler_stmt = $db->prepare($projeler_sql);
-$projeler_stmt->execute($params);
+if (count($tedarikci_idleri) > 0) {
+    $projeler_sql = "SELECT DISTINCT p.id, p.proje_adi
+                    FROM projeler p
+                    INNER JOIN siparisler s ON p.id = s.proje_id
+                    WHERE s.tedarikci_id IN ($in) OR s.sorumlu_id = ?
+                    ORDER BY p.proje_adi";
+    $projeler_stmt = $db->prepare($projeler_sql);
+    $projeler_stmt->execute($params);
+} else {
+    $projeler_sql = "SELECT DISTINCT p.id, p.proje_adi
+                    FROM projeler p
+                    INNER JOIN siparisler s ON p.id = s.proje_id
+                    WHERE s.sorumlu_id = ?
+                    ORDER BY p.proje_adi";
+    $projeler_stmt = $db->prepare($projeler_sql);
+    $projeler_stmt->execute([$sorumlu_id]);
+}
 $projeler = $projeler_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Rapor verilerini al
@@ -58,8 +69,13 @@ $where_conditions = [];
 $where_params = [];
 
 // Temel koşul - kullanıcının sorumlu olduğu tedarikçilerle ilgili siparişler
-$where_conditions[] = "(s.tedarikci_id IN ($in) OR s.sorumlu_id = ?)";
-$where_params = $params;
+if (count($tedarikci_idleri) > 0) {
+    $where_conditions[] = "(s.tedarikci_id IN ($in) OR s.sorumlu_id = ?)";
+    $where_params = $params;
+} else {
+    $where_conditions[] = "s.sorumlu_id = ?";
+    $where_params = [$sorumlu_id];
+}
 
 // Tarih filtresi
 $where_conditions[] = "s.acilis_tarihi BETWEEN ? AND ?";

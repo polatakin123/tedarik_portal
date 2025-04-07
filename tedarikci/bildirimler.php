@@ -196,7 +196,7 @@ include 'header.php';
                             <?php endif; ?>
                             <?= guvenli($bildirim['baslik'] ?? $bildirim['mesaj']) ?>
                         </h5>
-                        <small class="text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['tarih'])) ?></small>
+                        <small class="text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></small>
                     </div>
                     <p class="mb-1 mt-2"><?= nl2br(guvenli($bildirim['mesaj'])) ?></p>
                     <div class="d-flex justify-content-between align-items-center mt-2">

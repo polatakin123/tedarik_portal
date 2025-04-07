@@ -145,220 +145,29 @@ $bildirimler_sql = "SELECT b.*, s.siparis_no
 $bildirimler_stmt = $db->prepare($bildirimler_sql);
 $bildirimler_stmt->execute([$kullanici_id]);
 $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Header'ı dahil et
+include 'header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yeni Sipariş Ekle - Admin Paneli</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 48px 0 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-            background-color: #4e73df;
-            transition: all 0.3s;
-            width: 250px;
-        }
-        .sidebar-sticky {
-            position: relative;
-            top: 0;
-            height: calc(100vh - 48px);
-            padding-top: 0.5rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        main {
-            margin-left: 250px;
-            padding: 2rem;
-            padding-top: 70px;
-            transition: all 0.3s;
-        }
-        .navbar {
-            position: fixed;
-            top: 0;
-            right: 0;
-            left: 250px;
-            z-index: 99;
-            background-color: #fff !important;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            transition: all 0.3s;
-            height: 60px;
-        }
-        .card {
-            border: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-        }
-        .badge-notification {
-            position: absolute;
-            top: 0.25rem;
-            right: 0.25rem;
-            font-size: 0.75rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <nav class="sidebar col-md-3 col-lg-2 d-md-block text-white">
-        <div class="pt-3 text-center mb-4">
-            <h4>Tedarik Portalı</h4>
-            <p>Admin Paneli</p>
-        </div>
-        <div class="sidebar-sticky">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">
-                        <i class="bi bi-house-door"></i> Ana Sayfa
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="siparisler.php">
-                        <i class="bi bi-list-check"></i> Siparişler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="tedarikciler.php">
-                        <i class="bi bi-building"></i> Tedarikçiler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sorumlular.php">
-                        <i class="bi bi-people"></i> Sorumlular
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="projeler.php">
-                        <i class="bi bi-diagram-3"></i> Projeler
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="kullanicilar.php">
-                        <i class="bi bi-person-badge"></i> Kullanıcılar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="raporlar.php">
-                        <i class="bi bi-graph-up"></i> Raporlar
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="ayarlar.php">
-                        <i class="bi bi-gear"></i> Ayarlar
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link" href="../cikis.php">
-                        <i class="bi bi-box-arrow-right"></i> Çıkış Yap
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownBildirim" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-bell"></i>
-                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
-                                <span class="badge rounded-pill bg-danger badge-notification"><?= $okunmamis_bildirim_sayisi ?></span>
-                            <?php endif; ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownBildirim">
-                            <?php if (count($bildirimler) > 0): ?>
-                                <?php foreach ($bildirimler as $bildirim): ?>
-                                    <li>
-                                        <a class="dropdown-item" href="bildirim_goruntule.php?id=<?= $bildirim['id'] ?>">
-                                            <?= guvenli(mb_substr($bildirim['mesaj'], 0, 50)) ?>...
-                                            <div class="small text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></div>
-                                        </a>
-                                    </li>
-                                <?php endforeach; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
-                            <?php else: ?>
-                                <li><a class="dropdown-item text-center" href="#">Bildirim bulunmamaktadır</a></li>
-                            <?php endif; ?>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfil" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> <?= guvenli($_SESSION['ad_soyad']) ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownProfil">
-                            <li><a class="dropdown-item" href="profil.php">Profilim</a></li>
-                            <li><a class="dropdown-item" href="ayarlar.php">Ayarlar</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../cikis.php">Çıkış Yap</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Ana İçerik -->
-    <main>
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Yeni Sipariş Ekle</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="siparisler.php" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Siparişlere Dön
-                    </a>
-                </div>
-            </div>
-
-            <?php if (!empty($hatalar)): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <ul class="mb-0">
-                        <?php foreach ($hatalar as $hata): ?>
-                            <li><?= guvenli($hata) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                </div>
-            <?php endif; ?>
-
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">Sipariş Bilgileri</h5>
                 </div>
                 <div class="card-body">
+                    <?php if (!empty($hatalar)): ?>
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                <?php foreach ($hatalar as $hata): ?>
+                                    <li><?= $hata ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
                     <form method="post" action="" class="needs-validation" novalidate>
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -386,6 +195,7 @@ $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div class="invalid-feedback">Lütfen bir proje seçin.</div>
                             </div>
                         </div>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="sorumlu_id" class="form-label">Sorumlu <span class="text-danger">*</span></label>
@@ -393,7 +203,7 @@ $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <option value="">-- Sorumlu Seçin --</option>
                                     <?php foreach ($sorumlular as $sorumlu): ?>
                                         <option value="<?= $sorumlu['id'] ?>" <?= (isset($sorumlu_id) && $sorumlu_id == $sorumlu['id']) ? 'selected' : '' ?>>
-                                            <?= guvenli($sorumlu['ad_soyad']) ?> (<?= guvenli($sorumlu['email']) ?>)
+                                            <?= guvenli($sorumlu['ad_soyad']) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -410,116 +220,64 @@ $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </select>
                             </div>
                         </div>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="parca_no" class="form-label">Parça Numarası <span class="text-danger">*</span></label>
+                                <label for="parca_no" class="form-label">Parça No <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="parca_no" name="parca_no" value="<?= isset($parca_no) ? guvenli($parca_no) : '' ?>" required>
-                                <div class="invalid-feedback">Parça numarası girilmelidir.</div>
+                                <div class="invalid-feedback">Lütfen parça numarası girin.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="parca_adi" class="form-label">Parça Adı</label>
                                 <input type="text" class="form-control" id="parca_adi" name="parca_adi" value="<?= isset($parca_adi) ? guvenli($parca_adi) : '' ?>">
                             </div>
                         </div>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="miktar" class="form-label">Miktar <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="miktar" name="miktar" value="<?= isset($miktar) ? guvenli($miktar) : '' ?>" min="0.01" step="0.01" required>
-                                <div class="invalid-feedback">Geçerli bir miktar girilmelidir.</div>
+                                <input type="number" class="form-control" id="miktar" name="miktar" value="<?= isset($miktar) ? guvenli($miktar) : '' ?>" required min="0" step="0.01">
+                                <div class="invalid-feedback">Lütfen geçerli bir miktar girin.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="birim" class="form-label">Birim <span class="text-danger">*</span></label>
                                 <select class="form-select" id="birim" name="birim" required>
                                     <option value="">-- Birim Seçin --</option>
-                                    <option value="Adet" <?= (isset($birim) && $birim == 'Adet') ? 'selected' : '' ?>>Adet</option>
-                                    <option value="Kg" <?= (isset($birim) && $birim == 'Kg') ? 'selected' : '' ?>>Kilogram (Kg)</option>
-                                    <option value="Lt" <?= (isset($birim) && $birim == 'Lt') ? 'selected' : '' ?>>Litre (Lt)</option>
-                                    <option value="Mt" <?= (isset($birim) && $birim == 'Mt') ? 'selected' : '' ?>>Metre (Mt)</option>
-                                    <option value="m²" <?= (isset($birim) && $birim == 'm²') ? 'selected' : '' ?>>Metrekare (m²)</option>
-                                    <option value="m³" <?= (isset($birim) && $birim == 'm³') ? 'selected' : '' ?>>Metreküp (m³)</option>
-                                    <option value="Paket" <?= (isset($birim) && $birim == 'Paket') ? 'selected' : '' ?>>Paket</option>
-                                    <option value="Kutu" <?= (isset($birim) && $birim == 'Kutu') ? 'selected' : '' ?>>Kutu</option>
-                                    <option value="Takım" <?= (isset($birim) && $birim == 'Takım') ? 'selected' : '' ?>>Takım</option>
+                                    <option value="ADET" <?= (isset($birim) && $birim == 'ADET') ? 'selected' : '' ?>>Adet</option>
+                                    <option value="KG" <?= (isset($birim) && $birim == 'KG') ? 'selected' : '' ?>>Kilogram</option>
+                                    <option value="METRE" <?= (isset($birim) && $birim == 'METRE') ? 'selected' : '' ?>>Metre</option>
+                                    <option value="LITRE" <?= (isset($birim) && $birim == 'LITRE') ? 'selected' : '' ?>>Litre</option>
                                 </select>
                                 <div class="invalid-feedback">Lütfen bir birim seçin.</div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="teslim_tarihi" class="form-label">Teslim Tarihi</label>
-                            <input type="date" class="form-control" id="teslim_tarihi" name="teslim_tarihi" value="<?= isset($teslim_tarihi) ? guvenli($teslim_tarihi) : '' ?>">
-                            <div class="form-text">Teslim tarihi belirlenmemişse boş bırakabilirsiniz.</div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="teslim_tarihi" class="form-label">Teslim Tarihi</label>
+                                <input type="date" class="form-control" id="teslim_tarihi" name="teslim_tarihi" value="<?= isset($teslim_tarihi) ? guvenli($teslim_tarihi) : '' ?>">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="aciklama" class="form-label">Açıklama</label>
-                            <textarea class="form-control" id="aciklama" name="aciklama" rows="4"><?= isset($aciklama) ? guvenli($aciklama) : '' ?></textarea>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="aciklama" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="aciklama" name="aciklama" rows="3"><?= isset($aciklama) ? guvenli($aciklama) : '' ?></textarea>
+                            </div>
                         </div>
+
                         <div class="text-end">
                             <a href="siparisler.php" class="btn btn-secondary">İptal</a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Siparişi Oluştur
-                            </button>
+                            <button type="submit" class="btn btn-primary">Sipariş Oluştur</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Bootstrap form validasyonu
-        (function() {
-            'use strict';
-            var forms = document.querySelectorAll('.needs-validation');
-            Array.from(forms).forEach(function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        })();
-        
-        // Tedarikçi seçildiğinde ilgili sorumluları getir
-        document.getElementById('tedarikci_id').addEventListener('change', function() {
-            const tedarikciId = this.value;
-            if (tedarikciId) {
-                fetch('api/get_tedarikci_sorumlulari.php?tedarikci_id=' + tedarikciId)
-                    .then(response => response.json())
-                    .then(data => {
-                        const sorumluSelect = document.getElementById('sorumlu_id');
-                        const selectedValue = sorumluSelect.value;
-                        
-                        if (data.length > 0) {
-                            // Sorumlu seçimi için öneri oluştur
-                            const sorumlularOption = document.createElement('optgroup');
-                            sorumlularOption.label = 'Bu tedarikçinin sorumluları';
-                            
-                            data.forEach(sorumlu => {
-                                const option = document.createElement('option');
-                                option.value = sorumlu.id;
-                                option.text = sorumlu.ad_soyad + ' (' + sorumlu.email + ')';
-                                option.selected = (selectedValue == sorumlu.id);
-                                sorumlularOption.appendChild(option);
-                            });
-                            
-                            // Diğer seçenekleri koruyarak yeni önerileri ekle
-                            const currentOptions = Array.from(sorumluSelect.options);
-                            sorumluSelect.innerHTML = '';
-                            
-                            // İlk seçenek (-- Sorumlu Seçin --)
-                            if(currentOptions.length > 0 && currentOptions[0].value === '') {
-                                sorumluSelect.add(currentOptions[0]);
-                            }
-                            
-                            sorumluSelect.appendChild(sorumlularOption);
-                        }
-                    })
-                    .catch(error => console.error('Sorumluları getirirken hata oluştu:', error));
-            }
-        });
-    </script>
-</body>
-</html> 
+<?php
+// Footer'ı dahil et
+include 'footer.php';
+?> 

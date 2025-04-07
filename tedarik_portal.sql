@@ -1,233 +1,797 @@
--- tedarik_portal.sql
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Anamakine: 127.0.0.1
+-- Üretim Zamanı: 07 Nis 2025, 21:45:07
+-- Sunucu sürümü: 10.4.28-MariaDB
+-- PHP Sürümü: 8.0.28
 
--- Veritabanını oluştur
-CREATE DATABASE IF NOT EXISTS tedarik_portal CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci;
-USE tedarik_portal;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
--- Kullanıcılar tablosu (admin, sorumlu, tedarikçi rollerini içerir)
-CREATE TABLE IF NOT EXISTS kullanicilar (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    kullanici_adi VARCHAR(50) NOT NULL UNIQUE,
-    sifre VARCHAR(255) NOT NULL,
-    ad_soyad VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    telefon VARCHAR(20),
-    rol ENUM('Admin', 'Sorumlu', 'Tedarikci') NOT NULL DEFAULT 'Tedarikci',
-    firma_id INT NULL,
-    aktif BOOLEAN NOT NULL DEFAULT TRUE,
-    son_giris DATETIME,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX (firma_id)
-);
 
--- Projeler tablosu
-CREATE TABLE IF NOT EXISTS projeler (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    proje_adi VARCHAR(255) NOT NULL,
-    proje_aciklama TEXT,
-    baslangic_tarihi DATE,
-    bitis_tarihi DATE,
-    durum ENUM('Aktif', 'Tamamlandi', 'Beklemede', 'Iptal') NOT NULL DEFAULT 'Aktif',
-    olusturan_id INT NOT NULL,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    guncelleme_tarihi DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (olusturan_id) REFERENCES kullanicilar(id)
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- Tedarikçiler tablosu
-CREATE TABLE IF NOT EXISTS tedarikciler (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    firma_adi VARCHAR(255) NOT NULL,
-    firma_kodu VARCHAR(50),
-    adres TEXT,
-    telefon VARCHAR(20),
-    email VARCHAR(100),
-    yetkili_kisi VARCHAR(100),
-    vergi_no VARCHAR(20),
-    aktif BOOLEAN NOT NULL DEFAULT TRUE,
-    olusturan_id INT NOT NULL,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    guncelleme_tarihi DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    kullanici_id INT,
-    FOREIGN KEY (olusturan_id) REFERENCES kullanicilar(id),
-    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id)
-);
+--
+-- Veritabanı: `tedarik_portal`
+--
 
--- Sorumluluklar tablosu (sorumlu-tedarikçi ilişkisi)
-CREATE TABLE IF NOT EXISTS sorumluluklar (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sorumlu_id INT NOT NULL,
-    tedarikci_id INT NOT NULL,
-    atama_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    olusturan_id INT NOT NULL,
-    FOREIGN KEY (sorumlu_id) REFERENCES kullanicilar(id),
-    FOREIGN KEY (tedarikci_id) REFERENCES tedarikciler(id),
-    FOREIGN KEY (olusturan_id) REFERENCES kullanicilar(id),
-    UNIQUE KEY (sorumlu_id, tedarikci_id)
-);
+-- --------------------------------------------------------
 
--- Sipariş durumları tablosu
-CREATE TABLE IF NOT EXISTS siparis_durumlari (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    durum_adi VARCHAR(50) NOT NULL,
-    aciklama TEXT
-);
+--
+-- Tablo için tablo yapısı `ayarlar`
+--
 
--- Siparişler tablosu (genişletilmiş)
-CREATE TABLE IF NOT EXISTS siparisler (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    siparis_no VARCHAR(50) NOT NULL UNIQUE,
-    parca_no VARCHAR(50) NOT NULL,
-    tanim VARCHAR(255),
-    proje_id INT,
-    tedarikci_id INT,
-    sorumlu_id INT,
-    acilis_tarihi DATE NOT NULL,
-    teslim_tarihi DATE,
-    miktar INT DEFAULT 0,
-    birim VARCHAR(20),
-    kalan_miktar INT DEFAULT 0,
-    durum_id INT NOT NULL,
-    fai BOOLEAN DEFAULT FALSE,
-    paketleme VARCHAR(100),
-    satinalmaci VARCHAR(100),
-    alt_malzeme TEXT,
-    tedarikci_tarihi DATE,
-    tedarikci_notu TEXT,
-    onaylanan_revizyon VARCHAR(50),
-    tedarikci_parca_no VARCHAR(50),
-    vehicle_id VARCHAR(50),
-    olusturan_id INT NOT NULL,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    guncelleme_tarihi DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (durum_id) REFERENCES siparis_durumlari(id),
-    FOREIGN KEY (proje_id) REFERENCES projeler(id),
-    FOREIGN KEY (tedarikci_id) REFERENCES tedarikciler(id),
-    FOREIGN KEY (sorumlu_id) REFERENCES kullanicilar(id),
-    FOREIGN KEY (olusturan_id) REFERENCES kullanicilar(id)
-);
+CREATE TABLE `ayarlar` (
+  `id` int(11) NOT NULL,
+  `site_basligi` varchar(255) NOT NULL,
+  `site_aciklamasi` text DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `telefon` varchar(50) DEFAULT NULL,
+  `adres` text DEFAULT NULL,
+  `tema_renk` varchar(20) DEFAULT '#4e73df',
+  `logo_url` varchar(255) DEFAULT NULL,
+  `favicon_url` varchar(255) DEFAULT NULL,
+  `olusturma_tarihi` timestamp NOT NULL DEFAULT current_timestamp(),
+  `guncelleme_tarihi` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Sipariş dokümanları tablosu
-CREATE TABLE IF NOT EXISTS siparis_dokumanlari (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    siparis_id INT NOT NULL,
-    dokuman_adi VARCHAR(255) NOT NULL,
-    dosya_yolu VARCHAR(255) NOT NULL,
-    dosya_turu VARCHAR(50),
-    yukleme_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    yukleyen_id INT NOT NULL,
-    FOREIGN KEY (siparis_id) REFERENCES siparisler(id),
-    FOREIGN KEY (yukleyen_id) REFERENCES kullanicilar(id)
-);
+--
+-- Tablo döküm verisi `ayarlar`
+--
 
--- Sipariş kalemler tablosu
-CREATE TABLE IF NOT EXISTS siparis_kalemleri (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    siparis_id INT NOT NULL,
-    parca_no VARCHAR(50) NOT NULL,
-    miktar INT NOT NULL DEFAULT 0,
-    teslim_edilen INT DEFAULT 0,
-    birim_fiyat DECIMAL(10, 2),
-    para_birimi VARCHAR(10),
-    aciklama TEXT,
-    FOREIGN KEY (siparis_id) REFERENCES siparisler(id)
-);
+INSERT INTO `ayarlar` (`id`, `site_basligi`, `site_aciklamasi`, `email`, `telefon`, `adres`, `tema_renk`, `logo_url`, `favicon_url`, `olusturma_tarihi`, `guncelleme_tarihi`) VALUES
+(1, 'Tedarik Portalı', 'Tedarikçi ve Sipariş Yönetim Sistemi', 'info@tedarikportali.com', '0212 123 45 67', 'İstanbul, Türkiye', '#036316', '', '', '2025-04-07 19:22:11', '2025-04-07 19:22:44');
 
--- Sipariş güncellemeleri tablosu
-CREATE TABLE IF NOT EXISTS siparis_guncellemeleri (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    siparis_id INT NOT NULL,
-    guncelleme_tipi VARCHAR(100) NOT NULL,
-    guncelleme_detay TEXT,
-    guncelleme_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    guncelleyen_id INT NOT NULL,
-    FOREIGN KEY (siparis_id) REFERENCES siparisler(id),
-    FOREIGN KEY (guncelleyen_id) REFERENCES kullanicilar(id)
-);
+-- --------------------------------------------------------
 
--- Bildirimler tablosu
-CREATE TABLE IF NOT EXISTS bildirimler (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    kullanici_id INT NOT NULL,
-    mesaj TEXT NOT NULL,
-    okundu BOOLEAN DEFAULT FALSE,
-    bildirim_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ilgili_siparis_id INT,
-    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id),
-    FOREIGN KEY (ilgili_siparis_id) REFERENCES siparisler(id)
-);
+--
+-- Tablo için tablo yapısı `bildirimler`
+--
 
--- Kullanıcı-Tedarikçi ilişkileri tablosu (tedarikçi kullanıcıların hangi tedarikçi firmalara ait olduğunu belirtir)
-CREATE TABLE IF NOT EXISTS kullanici_tedarikci_iliskileri (
-    id INT(11) NOT NULL AUTO_INCREMENT,
-    kullanici_id INT NOT NULL,
-    tedarikci_id INT NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY kullanici_tedarikci (kullanici_id, tedarikci_id),
-    INDEX (kullanici_id),
-    INDEX (tedarikci_id),
-    FOREIGN KEY (kullanici_id) REFERENCES kullanicilar(id),
-    FOREIGN KEY (tedarikci_id) REFERENCES tedarikciler(id)
+CREATE TABLE `bildirimler` (
+  `id` int(11) NOT NULL,
+  `kullanici_id` int(11) NOT NULL,
+  `mesaj` text NOT NULL,
+  `okundu` tinyint(1) DEFAULT 0,
+  `bildirim_tarihi` datetime DEFAULT current_timestamp(),
+  `ilgili_siparis_id` int(11) DEFAULT NULL,
+  `ilgili_dokuman_id` int(11) DEFAULT NULL,
+  `gonderen_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
--- Tedarikçi kullanıcılarını uygun tedarikçi firmalara bağla
-INSERT IGNORE INTO kullanici_tedarikci_iliskileri (kullanici_id, tedarikci_id)
-SELECT k.id, t.id
-FROM kullanicilar k
-INNER JOIN tedarikciler t ON t.id = k.firma_id
-WHERE k.rol = 'Tedarikci' AND k.firma_id IS NOT NULL;
+--
+-- Tablo döküm verisi `bildirimler`
+--
 
--- Örnek veriler
--- Örnek sipariş durumları
-INSERT INTO siparis_durumlari (durum_adi, aciklama) VALUES 
-('Açık', 'Aktif sipariş'),
-('Kapalı', 'Tamamlanmış sipariş'),
-('Beklemede', 'Bekleyen sipariş'),
-('İptal', 'İptal edilmiş sipariş');
+INSERT INTO `bildirimler` (`id`, `kullanici_id`, `mesaj`, `okundu`, `bildirim_tarihi`, `ilgili_siparis_id`, `ilgili_dokuman_id`, `gonderen_id`) VALUES
+(1, 2, 'S2023-001 numaralı siparişin teslimat tarihi yaklaşıyor', 1, '2025-04-02 23:21:07', 1, 0, 0),
+(2, 3, 'S2023-001 numaralı sipariş size atandı', 1, '2025-04-02 23:21:07', 1, 0, 0),
+(3, 2, 'ABC Metal A.Ş. firması sorumluluğunuza atandı.', 1, '2025-04-03 00:02:23', NULL, 0, 0),
+(4, 5, 'XYZ Elektronik Ltd. firması sorumluluğunuza atandı.', 0, '2025-04-03 00:10:19', NULL, 0, 0),
+(5, 2, 'Yeni bir sipariş oluşturuldu: SIP-2025-0001', 1, '2025-04-03 00:25:38', 3, 0, 0),
+(6, 2, 'Yeni bir sipariş oluşturuldu: SIP-2025-0002', 1, '2025-04-03 00:26:21', 4, 0, 0),
+(7, 3, 'S2023-001 numaralı siparişin durumu Açık olarak güncellendi.', 1, '2025-04-06 21:50:02', 1, 0, 0),
+(8, 3, 'S2023-001 numaralı siparişin durumu Açık olarak güncellendi.', 1, '2025-04-06 21:50:16', 1, 0, 0),
+(9, 2, 'Sipariş durumu değişti: SIP-2025-0002 - Beklemede', 0, '2025-04-06 22:54:05', 4, NULL, 0),
+(10, 3, 'Sipariş durumu değişti: SIP-2025-0002 - Beklemede', 0, '2025-04-06 22:54:05', 4, NULL, 0),
+(11, 2, 'Sipariş durumu değişti: SIP-2025-0001 - Kapalı', 0, '2025-04-06 22:54:58', 3, NULL, 0),
+(12, 3, 'Sipariş durumu değişti: SIP-2025-0001 - Kapalı', 0, '2025-04-06 22:54:58', 3, NULL, 0);
 
--- Örnek kullanıcılar (şifre: 123456)
-INSERT INTO kullanicilar (kullanici_adi, sifre, ad_soyad, email, rol) VALUES 
-('admin', '$2y$10$92bJNMiiRe2vRPJ3xrcVGujbqCbQ8vp2y8hkwGpH3pPjmA0F5E7lW', 'Sistem Yöneticisi', 'admin@ornek.com', 'Admin'),
-('sorumlu1', '$2y$10$92bJNMiiRe2vRPJ3xrcVGujbqCbQ8vp2y8hkwGpH3pPjmA0F5E7lW', 'Sorumlu Kullanıcı', 'sorumlu@ornek.com', 'Sorumlu'),
-('tedarikci1', '$2y$10$92bJNMiiRe2vRPJ3xrcVGujbqCbQ8vp2y8hkwGpH3pPjmA0F5E7lW', 'Tedarikçi Firma', 'tedarikci@ornek.com', 'Tedarikci');
+-- --------------------------------------------------------
 
--- Örnek projeler
-INSERT INTO projeler (proje_adi, proje_aciklama, baslangic_tarihi, bitis_tarihi, durum, olusturan_id) VALUES 
-('Araç Modernizasyonu', 'Zırhlı araçların modernizasyonu projesi', '2023-01-01', '2023-12-31', 'Aktif', 1),
-('İHA Geliştirme', 'İnsansız hava aracı geliştirme projesi', '2023-02-15', '2024-06-30', 'Aktif', 1);
+--
+-- Tablo için tablo yapısı `kullanicilar`
+--
 
--- Örnek tedarikçiler
-INSERT INTO tedarikciler (firma_adi, firma_kodu, adres, telefon, email, yetkili_kisi, olusturan_id, kullanici_id) VALUES 
-('ABC Metal A.Ş.', 'ABC001', 'Ankara Organize Sanayi Bölgesi', '0312 555 5555', 'info@abcmetal.com', 'Ahmet Yılmaz', 1, 3),
-('XYZ Elektronik Ltd.', 'XYZ002', 'İstanbul Teknopark', '0212 444 4444', 'info@xyzelektronik.com', 'Mehmet Demir', 1, NULL);
+CREATE TABLE `kullanicilar` (
+  `id` int(11) NOT NULL,
+  `kullanici_adi` varchar(50) NOT NULL,
+  `sifre` varchar(255) NOT NULL,
+  `ad_soyad` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `telefon` varchar(20) DEFAULT NULL,
+  `rol` enum('Admin','Sorumlu','Tedarikci') NOT NULL DEFAULT 'Tedarikci',
+  `firma_id` int(11) DEFAULT NULL,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `son_giris` datetime DEFAULT NULL,
+  `olusturma_tarihi` datetime DEFAULT current_timestamp(),
+  `guncelleme_tarihi` date NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
--- Örnek sorumluluklar
-INSERT INTO sorumluluklar (sorumlu_id, tedarikci_id, olusturan_id) VALUES 
-(2, 1, 1); -- Sorumlu1, ABC Metal firmasından sorumlu
+--
+-- Tablo döküm verisi `kullanicilar`
+--
 
--- Örnek siparişler
-INSERT INTO siparisler (siparis_no, parca_no, tanim, proje_id, tedarikci_id, sorumlu_id, acilis_tarihi, 
-                      teslim_tarihi, miktar, birim, kalan_miktar, durum_id, fai, olusturan_id) VALUES 
-('S2023-001', 'P1001', 'Zırh Plakası', 1, 1, 2, '2023-03-01', '2023-04-15', 100, 'Adet', 100, 1, TRUE, 1),
-('S2023-002', 'E2001', 'Elektronik Kontrol Ünitesi', 2, 2, 2, '2023-03-10', '2023-05-01', 50, 'Adet', 50, 1, FALSE, 1);
+INSERT INTO `kullanicilar` (`id`, `kullanici_adi`, `sifre`, `ad_soyad`, `email`, `telefon`, `rol`, `firma_id`, `aktif`, `son_giris`, `olusturma_tarihi`, `guncelleme_tarihi`) VALUES
+(1, 'admin', '$2y$10$R66MmPMc6hX18uOog0I7/.2YXqvNVk10gRzShk27ZYkWuuCGMX8yq', 'Sistem Yöneticisi', 'admin@ornek.com', NULL, 'Admin', NULL, 1, '2025-04-06 22:49:01', '2025-04-02 23:21:07', '2025-04-03'),
+(2, 'sorumlu', '$2y$10$R66MmPMc6hX18uOog0I7/.2YXqvNVk10gRzShk27ZYkWuuCGMX8yq', 'Sorumlu Kullanıcı', 'sorumlu@ornek.com', NULL, 'Sorumlu', NULL, 1, '2025-04-06 21:25:41', '2025-04-02 23:21:07', '2025-04-03'),
+(3, 'tedarikci', '$2y$10$R66MmPMc6hX18uOog0I7/.2YXqvNVk10gRzShk27ZYkWuuCGMX8yq', 'Tedarikçi Firma', 'tedarikci@ornek.com', '', 'Tedarikci', NULL, 1, '2025-04-06 22:23:19', '2025-04-02 23:21:07', '2025-04-03'),
+(4, 'polat', '$2y$10$Q.vHTnxRdlkRmLLuHNoX6.phDP3LJJxS3bvPGJJoO3lcfqt0Xx3bi', 'polat', 'pol.akin@hotmail.com', '05052797954', 'Admin', NULL, 1, NULL, '2025-04-03 00:07:34', '2025-04-03'),
+(5, 'sorumlu2', '$2y$10$I3yRo4BnBADlfxJNDKpcx.L4bwAf7nn4eps98pYbcKvvKGeEGtmhy', 'polat sorumlu', 'polatakin1@gmail.com', '05052797954', 'Sorumlu', NULL, 1, '2025-04-03 00:11:33', '2025-04-03 00:08:03', '2025-04-03'),
+(6, 'burcu', '$2y$10$2EMvtQGKqHfZsvj93DsLIOSnzNskVuwqzk/KQISiPKFtvXUazApbi', 'burcu akın', 'burcu@hotmail.com', '0505', 'Sorumlu', NULL, 1, NULL, '2025-04-04 21:10:07', '2025-04-04'),
+(7, 'denemesorumlu', '$2y$10$2Sjx0zBN7lvDJoTWXvbTR.s/sd9BdFbyszS0Yl19h6HgVpjt1ioJG', 'deneme kullanıcı', 'deneme@deneme.com', '05050505', 'Sorumlu', NULL, 1, NULL, '2025-04-07 22:31:15', '2025-04-07');
 
--- Örnek sipariş dokümanları
-INSERT INTO siparis_dokumanlari (siparis_id, dokuman_adi, dosya_yolu, dosya_turu, yukleyen_id) VALUES 
-(1, 'Teknik Çizim', '/dosyalar/teknik_cizim.pdf', 'PDF', 1),
-(1, 'Malzeme Listesi', '/dosyalar/malzeme_listesi.xlsx', 'XLSX', 1);
+-- --------------------------------------------------------
 
--- Örnek sipariş kalemleri
-INSERT INTO siparis_kalemleri (siparis_id, parca_no, miktar, teslim_edilen) VALUES 
-(1, 'P1001-A', 50, 0),
-(1, 'P1001-B', 50, 0),
-(2, 'E2001-X', 50, 0);
+--
+-- Tablo için tablo yapısı `kullanici_tedarikci_iliskileri`
+--
 
--- Örnek sipariş güncellemeleri
-INSERT INTO siparis_guncellemeleri (siparis_id, guncelleme_tipi, guncelleme_detay, guncelleyen_id) VALUES 
-(1, 'Durum Değişikliği', 'Sipariş durumu Açık olarak güncellendi', 1),
-(2, 'Teslimat Tarihi Değişikliği', 'Teslimat tarihi 2023-05-01 olarak güncellendi', 1);
+CREATE TABLE `kullanici_tedarikci_iliskileri` (
+  `id` int(11) NOT NULL,
+  `kullanici_id` int(11) NOT NULL,
+  `tedarikci_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Örnek bildirimler
-INSERT INTO bildirimler (kullanici_id, mesaj, ilgili_siparis_id) VALUES 
-(2, 'S2023-001 numaralı siparişin teslimat tarihi yaklaşıyor', 1),
-(3, 'S2023-001 numaralı sipariş size atandı', 1); 
+--
+-- Tablo döküm verisi `kullanici_tedarikci_iliskileri`
+--
+
+INSERT INTO `kullanici_tedarikci_iliskileri` (`id`, `kullanici_id`, `tedarikci_id`) VALUES
+(1, 3, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `montaj_tipleri`
+--
+
+CREATE TABLE `montaj_tipleri` (
+  `id` int(11) NOT NULL,
+  `montaj_adi` varchar(100) NOT NULL,
+  `aciklama` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `montaj_tipleri`
+--
+
+INSERT INTO `montaj_tipleri` (`id`, `montaj_adi`, `aciklama`) VALUES
+(1, 'MONTAJLI', NULL),
+(2, 'MONTAJSIZ', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `projeler`
+--
+
+CREATE TABLE `projeler` (
+  `id` int(11) NOT NULL,
+  `proje_kodu` varchar(255) NOT NULL,
+  `proje_adi` varchar(255) NOT NULL,
+  `proje_yoneticisi` varchar(255) DEFAULT NULL,
+  `proje_aciklama` text DEFAULT NULL,
+  `baslangic_tarihi` date DEFAULT NULL,
+  `bitis_tarihi` date DEFAULT NULL,
+  `durum` enum('Aktif','Tamamlandi','Beklemede','Iptal') NOT NULL DEFAULT 'Aktif',
+  `olusturan_id` int(11) NOT NULL,
+  `olusturma_tarihi` datetime DEFAULT current_timestamp(),
+  `guncelleme_tarihi` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `aktif` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `projeler`
+--
+
+INSERT INTO `projeler` (`id`, `proje_kodu`, `proje_adi`, `proje_yoneticisi`, `proje_aciklama`, `baslangic_tarihi`, `bitis_tarihi`, `durum`, `olusturan_id`, `olusturma_tarihi`, `guncelleme_tarihi`, `aktif`) VALUES
+(1, '123', 'Araç Modernizasyonu', 'deneme', 'aasdasdasdasd adsadasdasd', '2023-01-01', '2023-12-31', 'Aktif', 1, '2025-04-02 23:21:07', '2025-04-07 22:19:01', 1),
+(2, '', 'İHA Geliştirme', '', 'İnsansız hava aracı geliştirme projesi', '2023-02-15', '2024-06-30', 'Aktif', 1, '2025-04-02 23:21:07', NULL, 1),
+(4, 'PRJ-2023-001', 'denemeee', '', '', '2025-04-04', '2025-09-30', 'Aktif', 1, '2025-04-04 21:19:31', NULL, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `renkler`
+--
+
+CREATE TABLE `renkler` (
+  `id` int(11) NOT NULL,
+  `renk_kodu` varchar(50) NOT NULL,
+  `renk_adi` varchar(100) DEFAULT NULL,
+  `aciklama` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `renkler`
+--
+
+INSERT INTO `renkler` (`id`, `renk_kodu`, `renk_adi`, `aciklama`) VALUES
+(1, 'ColorDoc:301507 ExtEarthYellow33245', 'Sarı', NULL),
+(2, 'ColorDoc:301506 ExtGreen363', 'Yeşil', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparisler`
+--
+
+CREATE TABLE `siparisler` (
+  `id` int(11) NOT NULL,
+  `siparis_no` varchar(50) NOT NULL,
+  `parca_no` varchar(50) NOT NULL,
+  `tanim` varchar(255) DEFAULT NULL,
+  `proje_id` int(11) DEFAULT NULL,
+  `tedarikci_id` int(11) DEFAULT NULL,
+  `sorumlu_id` int(11) DEFAULT NULL,
+  `acilis_tarihi` date NOT NULL,
+  `parca_adi` varchar(255) NOT NULL,
+  `teslim_tarihi` date DEFAULT NULL,
+  `miktar` int(11) DEFAULT 0,
+  `birim` varchar(20) DEFAULT NULL,
+  `kalan_miktar` int(11) DEFAULT 0,
+  `teslim_edilen_miktar` int(11) NOT NULL,
+  `durum_id` int(11) NOT NULL,
+  `fai` tinyint(1) DEFAULT 0,
+  `paketleme` varchar(100) DEFAULT NULL,
+  `satinalmaci` varchar(100) DEFAULT NULL,
+  `alt_malzeme` text DEFAULT NULL,
+  `tedarikci_tarihi` date DEFAULT NULL,
+  `tedarikci_notu` text DEFAULT NULL,
+  `onaylanan_revizyon` varchar(50) DEFAULT NULL,
+  `tedarikci_parca_no` varchar(50) DEFAULT NULL,
+  `vehicle_id` varchar(50) DEFAULT NULL,
+  `olusturan_id` int(11) NOT NULL,
+  `olusturma_tarihi` datetime DEFAULT current_timestamp(),
+  `guncelleme_tarihi` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `aciklama` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparisler`
+--
+
+INSERT INTO `siparisler` (`id`, `siparis_no`, `parca_no`, `tanim`, `proje_id`, `tedarikci_id`, `sorumlu_id`, `acilis_tarihi`, `parca_adi`, `teslim_tarihi`, `miktar`, `birim`, `kalan_miktar`, `teslim_edilen_miktar`, `durum_id`, `fai`, `paketleme`, `satinalmaci`, `alt_malzeme`, `tedarikci_tarihi`, `tedarikci_notu`, `onaylanan_revizyon`, `tedarikci_parca_no`, `vehicle_id`, `olusturan_id`, `olusturma_tarihi`, `guncelleme_tarihi`, `aciklama`) VALUES
+(1, 'S2023-001', 'P1001', 'Zırh Plakası', 1, 1, 2, '2023-03-01', '', '2023-04-15', 100, 'Adet', 100, 50, 1, 1, NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, 1, '2025-04-02 23:21:07', '2025-04-06 21:50:16', ''),
+(2, 'S2023-002', 'E2001', 'Elektronik Kontrol Ünitesi', 2, 2, 2, '2023-03-10', '', '2023-05-01', 50, 'Adet', 50, 0, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2025-04-02 23:21:07', NULL, ''),
+(3, 'SIP-2025-0001', 'asd', NULL, 1, 1, 2, '0000-00-00', 'denemeasd', '2025-04-23', 1000, 'Adet', 0, 0, 2, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2025-04-03 00:25:38', '2025-04-06 22:54:58', 'asdasdasdasd'),
+(4, 'SIP-2025-0002', 'asd', NULL, 1, 1, 2, '0000-00-00', 'asdsadasdsad', '2025-04-23', 1000, 'Adet', 0, 0, 3, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2025-04-03 00:26:21', '2025-04-06 22:54:05', 'asdasdasdasd');
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_dokumanlari`
+--
+
+CREATE TABLE `siparis_dokumanlari` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `dokuman_adi` varchar(255) NOT NULL,
+  `dosya_yolu` varchar(255) NOT NULL,
+  `dosya_turu` varchar(50) DEFAULT NULL,
+  `dosya_boyutu` int(11) NOT NULL,
+  `yukleme_tarihi` datetime DEFAULT current_timestamp(),
+  `yukleyen_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_dokumanlari`
+--
+
+INSERT INTO `siparis_dokumanlari` (`id`, `siparis_id`, `dokuman_adi`, `dosya_yolu`, `dosya_turu`, `dosya_boyutu`, `yukleme_tarihi`, `yukleyen_id`) VALUES
+(1, 1, 'Teknik Çizim', '/dosyalar/teknik_cizim.pdf', 'PDF', 0, '2025-04-02 23:21:07', 1),
+(2, 1, 'Malzeme Listesi', '/dosyalar/malzeme_listesi.xlsx', 'XLSX', 0, '2025-04-02 23:21:07', 1),
+(3, 4, '123', '67f2d0a6ee312_tedarikportal.pdf', 'PDF', 208956, '2025-04-06 22:06:14', 2);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_durumlari`
+--
+
+CREATE TABLE `siparis_durumlari` (
+  `id` int(11) NOT NULL,
+  `durum_adi` varchar(50) NOT NULL,
+  `aciklama` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_durumlari`
+--
+
+INSERT INTO `siparis_durumlari` (`id`, `durum_adi`, `aciklama`) VALUES
+(1, 'Açık', 'Aktif sipariş'),
+(2, 'Kapalı', 'Tamamlanmış sipariş'),
+(3, 'Beklemede', 'Bekleyen sipariş'),
+(4, 'İptal', 'İptal edilmiş sipariş');
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_gecmisi`
+--
+
+CREATE TABLE `siparis_gecmisi` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `islem_tipi` varchar(50) NOT NULL,
+  `aciklama` text DEFAULT NULL,
+  `kullanici_id` int(11) NOT NULL,
+  `islem_tarihi` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_guncellemeleri`
+--
+
+CREATE TABLE `siparis_guncellemeleri` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `guncelleme_tipi` varchar(100) NOT NULL,
+  `guncelleme_detay` text DEFAULT NULL,
+  `guncelleme_tarihi` datetime DEFAULT current_timestamp(),
+  `guncelleyen_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_guncellemeleri`
+--
+
+INSERT INTO `siparis_guncellemeleri` (`id`, `siparis_id`, `guncelleme_tipi`, `guncelleme_detay`, `guncelleme_tarihi`, `guncelleyen_id`) VALUES
+(1, 1, 'Durum Değişikliği', 'Sipariş durumu Açık olarak güncellendi', '2025-04-02 23:21:07', 1),
+(2, 2, 'Teslimat Tarihi Değişikliği', 'Teslimat tarihi 2023-05-01 olarak güncellendi', '2025-04-02 23:21:07', 1),
+(4, 1, 'Durum Güncelleme', 'Durum: 1, Teslim Edilen Miktar: 100', '2025-04-06 21:50:02', 2),
+(5, 1, 'Durum Güncelleme', 'Durum: 1, Teslim Edilen Miktar: 50', '2025-04-06 21:50:16', 2),
+(6, 4, 'Belge Ekleme', 'Belge: 123 eklendi.', '2025-04-06 22:06:14', 2);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_kalemleri`
+--
+
+CREATE TABLE `siparis_kalemleri` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `parca_no` varchar(50) NOT NULL,
+  `miktar` int(11) NOT NULL DEFAULT 0,
+  `teslim_edilen` int(11) DEFAULT 0,
+  `birim_fiyat` decimal(10,2) DEFAULT NULL,
+  `para_birimi` varchar(10) DEFAULT NULL,
+  `aciklama` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_kalemleri`
+--
+
+INSERT INTO `siparis_kalemleri` (`id`, `siparis_id`, `parca_no`, `miktar`, `teslim_edilen`, `birim_fiyat`, `para_birimi`, `aciklama`) VALUES
+(1, 1, 'P1001-A', 50, 0, NULL, NULL, NULL),
+(2, 1, 'P1001-B', 50, 0, NULL, NULL, NULL),
+(3, 2, 'E2001-X', 50, 0, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_log`
+--
+
+CREATE TABLE `siparis_log` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `islem_turu` varchar(255) NOT NULL,
+  `islem_yapan_id` int(11) NOT NULL,
+  `islem_tarihi` date NOT NULL DEFAULT current_timestamp(),
+  `durum_id` int(11) NOT NULL,
+  `aciklama` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_log`
+--
+
+INSERT INTO `siparis_log` (`id`, `siparis_id`, `islem_turu`, `islem_yapan_id`, `islem_tarihi`, `durum_id`, `aciklama`) VALUES
+(2, 1, 'Güncelleme', 2, '2025-04-06', 1, 'Sipariş durumu sorumlu tarafından güncellendi.'),
+(3, 1, 'Güncelleme', 2, '2025-04-06', 1, 'Sipariş durumu sorumlu tarafından güncellendi.'),
+(4, 4, 'Belge Ekleme', 2, '2025-04-06', 0, '\'123\' belgesi eklendi.');
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `siparis_notlari`
+--
+
+CREATE TABLE `siparis_notlari` (
+  `id` int(11) NOT NULL,
+  `siparis_id` int(11) NOT NULL,
+  `not_metni` text NOT NULL,
+  `ekleyen_id` int(11) DEFAULT NULL,
+  `eklenme_tarihi` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `siparis_notlari`
+--
+
+INSERT INTO `siparis_notlari` (`id`, `siparis_id`, `not_metni`, `ekleyen_id`, `eklenme_tarihi`) VALUES
+(1, 4, 'asdasd', 1, '2025-04-06 22:51:50'),
+(2, 4, 'deneememem', 1, '2025-04-06 22:51:57'),
+(3, 4, 'aaaaa', 1, '2025-04-06 22:54:05'),
+(4, 3, 'Sipariş durumu değiştirildi: Kapalı', 1, '2025-04-06 22:54:58');
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `sorumluluklar`
+--
+
+CREATE TABLE `sorumluluklar` (
+  `id` int(11) NOT NULL,
+  `sorumlu_id` int(11) NOT NULL,
+  `tedarikci_id` int(11) NOT NULL,
+  `atama_tarihi` datetime DEFAULT current_timestamp(),
+  `olusturan_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `sorumluluklar`
+--
+
+INSERT INTO `sorumluluklar` (`id`, `sorumlu_id`, `tedarikci_id`, `atama_tarihi`, `olusturan_id`) VALUES
+(2, 2, 1, '2025-04-03 00:02:23', 1),
+(3, 5, 2, '2025-04-03 00:10:19', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Tablo için tablo yapısı `tedarikciler`
+--
+
+CREATE TABLE `tedarikciler` (
+  `id` int(11) NOT NULL,
+  `firma_adi` varchar(255) NOT NULL,
+  `firma_kodu` varchar(50) DEFAULT NULL,
+  `adres` text DEFAULT NULL,
+  `il` varchar(255) NOT NULL,
+  `ilce` varchar(255) NOT NULL,
+  `telefon` varchar(20) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `yetkili_kisi` varchar(100) DEFAULT NULL,
+  `vergi_dairesi` varchar(255) NOT NULL,
+  `vergi_no` varchar(20) DEFAULT NULL,
+  `aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `olusturan_id` int(11) NOT NULL,
+  `olusturma_tarihi` datetime DEFAULT current_timestamp(),
+  `guncelleme_tarihi` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `kullanici_id` int(11) DEFAULT NULL,
+  `aciklama` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+--
+-- Tablo döküm verisi `tedarikciler`
+--
+
+INSERT INTO `tedarikciler` (`id`, `firma_adi`, `firma_kodu`, `adres`, `il`, `ilce`, `telefon`, `email`, `yetkili_kisi`, `vergi_dairesi`, `vergi_no`, `aktif`, `olusturan_id`, `olusturma_tarihi`, `guncelleme_tarihi`, `kullanici_id`, `aciklama`) VALUES
+(1, 'ABC Metal A.Ş.', 'ABC001', 'Ankara Organize Sanayi Bölgesi', '', '', '0312 555 5555', 'info@abcmetal.com', 'Ahmet Yılmaz', 'Liman', '123213123', 1, 1, '2025-04-02 23:21:07', '2025-04-03 00:34:39', 3, 'açıklamaaaaaa'),
+(2, 'XYZ Elektronik Ltd.', 'XYZ002', 'İstanbul Teknopark', '', '', '0212 444 4444', 'info@xyzelektronik.com', 'Mehmet Demir', '', NULL, 1, 1, '2025-04-02 23:21:07', NULL, NULL, ''),
+(4, 'Ali hakan japon oto', 'TEDALI369', 'asdasd', '', '', '05052797954', 'pol.akin@hotmail.com', 'Polat akın', '16544177320', 'LİMAN', 1, 1, '2025-04-04 21:13:36', NULL, NULL, '');
+
+--
+-- Dökümü yapılmış tablolar için indeksler
+--
+
+--
+-- Tablo için indeksler `ayarlar`
+--
+ALTER TABLE `ayarlar`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Tablo için indeksler `bildirimler`
+--
+ALTER TABLE `bildirimler`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `kullanici_id` (`kullanici_id`),
+  ADD KEY `ilgili_siparis_id` (`ilgili_siparis_id`);
+
+--
+-- Tablo için indeksler `kullanicilar`
+--
+ALTER TABLE `kullanicilar`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kullanici_adi` (`kullanici_adi`),
+  ADD KEY `firma_id` (`firma_id`);
+
+--
+-- Tablo için indeksler `kullanici_tedarikci_iliskileri`
+--
+ALTER TABLE `kullanici_tedarikci_iliskileri`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kullanici_tedarikci` (`kullanici_id`,`tedarikci_id`),
+  ADD KEY `kullanici_id` (`kullanici_id`),
+  ADD KEY `tedarikci_id` (`tedarikci_id`);
+
+--
+-- Tablo için indeksler `montaj_tipleri`
+--
+ALTER TABLE `montaj_tipleri`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Tablo için indeksler `projeler`
+--
+ALTER TABLE `projeler`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `olusturan_id` (`olusturan_id`);
+
+--
+-- Tablo için indeksler `renkler`
+--
+ALTER TABLE `renkler`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Tablo için indeksler `siparisler`
+--
+ALTER TABLE `siparisler`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `siparis_no` (`siparis_no`),
+  ADD KEY `durum_id` (`durum_id`),
+  ADD KEY `proje_id` (`proje_id`),
+  ADD KEY `tedarikci_id` (`tedarikci_id`),
+  ADD KEY `sorumlu_id` (`sorumlu_id`),
+  ADD KEY `olusturan_id` (`olusturan_id`);
+
+--
+-- Tablo için indeksler `siparis_dokumanlari`
+--
+ALTER TABLE `siparis_dokumanlari`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `siparis_id` (`siparis_id`),
+  ADD KEY `yukleyen_id` (`yukleyen_id`);
+
+--
+-- Tablo için indeksler `siparis_durumlari`
+--
+ALTER TABLE `siparis_durumlari`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Tablo için indeksler `siparis_gecmisi`
+--
+ALTER TABLE `siparis_gecmisi`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `siparis_id` (`siparis_id`),
+  ADD KEY `kullanici_id` (`kullanici_id`);
+
+--
+-- Tablo için indeksler `siparis_guncellemeleri`
+--
+ALTER TABLE `siparis_guncellemeleri`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `siparis_id` (`siparis_id`),
+  ADD KEY `guncelleyen_id` (`guncelleyen_id`);
+
+--
+-- Tablo için indeksler `siparis_kalemleri`
+--
+ALTER TABLE `siparis_kalemleri`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `siparis_id` (`siparis_id`);
+
+--
+-- Tablo için indeksler `siparis_log`
+--
+ALTER TABLE `siparis_log`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Tablo için indeksler `siparis_notlari`
+--
+ALTER TABLE `siparis_notlari`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `siparis_id` (`siparis_id`),
+  ADD KEY `ekleyen_id` (`ekleyen_id`);
+
+--
+-- Tablo için indeksler `sorumluluklar`
+--
+ALTER TABLE `sorumluluklar`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `sorumlu_id` (`sorumlu_id`,`tedarikci_id`),
+  ADD KEY `tedarikci_id` (`tedarikci_id`),
+  ADD KEY `olusturan_id` (`olusturan_id`);
+
+--
+-- Tablo için indeksler `tedarikciler`
+--
+ALTER TABLE `tedarikciler`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `olusturan_id` (`olusturan_id`),
+  ADD KEY `kullanici_id` (`kullanici_id`);
+
+--
+-- Dökümü yapılmış tablolar için AUTO_INCREMENT değeri
+--
+
+--
+-- Tablo için AUTO_INCREMENT değeri `ayarlar`
+--
+ALTER TABLE `ayarlar`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `bildirimler`
+--
+ALTER TABLE `bildirimler`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `kullanicilar`
+--
+ALTER TABLE `kullanicilar`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `kullanici_tedarikci_iliskileri`
+--
+ALTER TABLE `kullanici_tedarikci_iliskileri`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `montaj_tipleri`
+--
+ALTER TABLE `montaj_tipleri`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `projeler`
+--
+ALTER TABLE `projeler`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `renkler`
+--
+ALTER TABLE `renkler`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparisler`
+--
+ALTER TABLE `siparisler`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_dokumanlari`
+--
+ALTER TABLE `siparis_dokumanlari`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_durumlari`
+--
+ALTER TABLE `siparis_durumlari`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_gecmisi`
+--
+ALTER TABLE `siparis_gecmisi`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_guncellemeleri`
+--
+ALTER TABLE `siparis_guncellemeleri`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_kalemleri`
+--
+ALTER TABLE `siparis_kalemleri`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_log`
+--
+ALTER TABLE `siparis_log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `siparis_notlari`
+--
+ALTER TABLE `siparis_notlari`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `sorumluluklar`
+--
+ALTER TABLE `sorumluluklar`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- Tablo için AUTO_INCREMENT değeri `tedarikciler`
+--
+ALTER TABLE `tedarikciler`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Dökümü yapılmış tablolar için kısıtlamalar
+--
+
+--
+-- Tablo kısıtlamaları `bildirimler`
+--
+ALTER TABLE `bildirimler`
+  ADD CONSTRAINT `bildirimler_ibfk_1` FOREIGN KEY (`kullanici_id`) REFERENCES `kullanicilar` (`id`),
+  ADD CONSTRAINT `bildirimler_ibfk_2` FOREIGN KEY (`ilgili_siparis_id`) REFERENCES `siparisler` (`id`);
+
+--
+-- Tablo kısıtlamaları `projeler`
+--
+ALTER TABLE `projeler`
+  ADD CONSTRAINT `projeler_ibfk_1` FOREIGN KEY (`olusturan_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparisler`
+--
+ALTER TABLE `siparisler`
+  ADD CONSTRAINT `siparisler_ibfk_1` FOREIGN KEY (`durum_id`) REFERENCES `siparis_durumlari` (`id`),
+  ADD CONSTRAINT `siparisler_ibfk_2` FOREIGN KEY (`proje_id`) REFERENCES `projeler` (`id`),
+  ADD CONSTRAINT `siparisler_ibfk_3` FOREIGN KEY (`tedarikci_id`) REFERENCES `tedarikciler` (`id`),
+  ADD CONSTRAINT `siparisler_ibfk_4` FOREIGN KEY (`sorumlu_id`) REFERENCES `kullanicilar` (`id`),
+  ADD CONSTRAINT `siparisler_ibfk_5` FOREIGN KEY (`olusturan_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparis_dokumanlari`
+--
+ALTER TABLE `siparis_dokumanlari`
+  ADD CONSTRAINT `siparis_dokumanlari_ibfk_1` FOREIGN KEY (`siparis_id`) REFERENCES `siparisler` (`id`),
+  ADD CONSTRAINT `siparis_dokumanlari_ibfk_2` FOREIGN KEY (`yukleyen_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparis_gecmisi`
+--
+ALTER TABLE `siparis_gecmisi`
+  ADD CONSTRAINT `siparis_gecmisi_ibfk_1` FOREIGN KEY (`siparis_id`) REFERENCES `siparisler` (`id`),
+  ADD CONSTRAINT `siparis_gecmisi_ibfk_2` FOREIGN KEY (`kullanici_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparis_guncellemeleri`
+--
+ALTER TABLE `siparis_guncellemeleri`
+  ADD CONSTRAINT `siparis_guncellemeleri_ibfk_1` FOREIGN KEY (`siparis_id`) REFERENCES `siparisler` (`id`),
+  ADD CONSTRAINT `siparis_guncellemeleri_ibfk_2` FOREIGN KEY (`guncelleyen_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparis_kalemleri`
+--
+ALTER TABLE `siparis_kalemleri`
+  ADD CONSTRAINT `siparis_kalemleri_ibfk_1` FOREIGN KEY (`siparis_id`) REFERENCES `siparisler` (`id`);
+
+--
+-- Tablo kısıtlamaları `siparis_notlari`
+--
+ALTER TABLE `siparis_notlari`
+  ADD CONSTRAINT `siparis_notlari_ibfk_1` FOREIGN KEY (`siparis_id`) REFERENCES `siparisler` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `siparis_notlari_ibfk_2` FOREIGN KEY (`ekleyen_id`) REFERENCES `kullanicilar` (`id`) ON DELETE SET NULL;
+
+--
+-- Tablo kısıtlamaları `sorumluluklar`
+--
+ALTER TABLE `sorumluluklar`
+  ADD CONSTRAINT `sorumluluklar_ibfk_1` FOREIGN KEY (`sorumlu_id`) REFERENCES `kullanicilar` (`id`),
+  ADD CONSTRAINT `sorumluluklar_ibfk_2` FOREIGN KEY (`tedarikci_id`) REFERENCES `tedarikciler` (`id`),
+  ADD CONSTRAINT `sorumluluklar_ibfk_3` FOREIGN KEY (`olusturan_id`) REFERENCES `kullanicilar` (`id`);
+
+--
+-- Tablo kısıtlamaları `tedarikciler`
+--
+ALTER TABLE `tedarikciler`
+  ADD CONSTRAINT `tedarikciler_ibfk_1` FOREIGN KEY (`olusturan_id`) REFERENCES `kullanicilar` (`id`),
+  ADD CONSTRAINT `tedarikciler_ibfk_2` FOREIGN KEY (`kullanici_id`) REFERENCES `kullanicilar` (`id`);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

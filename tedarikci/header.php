@@ -12,6 +12,30 @@ if (!isset($_SESSION['giris']) || $_SESSION['giris'] !== true || $_SESSION['rol'
 
 // Aktif sayfayı tespit et
 $current_page = basename($_SERVER['SCRIPT_NAME']);
+
+require_once '../config.php';
+tedarikciYetkisiKontrol();
+
+// Tema rengini veritabanından al
+$tema_renk_sql = "SELECT tema_renk FROM ayarlar WHERE id = 1";
+$tema_renk_stmt = $db->prepare($tema_renk_sql);
+$tema_renk_stmt->execute();
+$tema_renk = $tema_renk_stmt->fetchColumn() ?: '#4e73df';
+
+// Okunmamış bildirim sayısını al
+$kullanici_id = $_SESSION['kullanici_id'];
+$okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $kullanici_id);
+
+// Son 5 bildirimi al
+$bildirimler_sql = "SELECT b.*, s.siparis_no
+                   FROM bildirimler b
+                   LEFT JOIN siparisler s ON b.ilgili_siparis_id = s.id
+                   WHERE b.kullanici_id = ? AND b.okundu = 0
+                   ORDER BY b.bildirim_tarihi DESC
+                   LIMIT 5";
+$bildirimler_stmt = $db->prepare($bildirimler_sql);
+$bildirimler_stmt->execute([$kullanici_id]);
+$bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -27,6 +51,64 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
         <?= $extra_css ?>
     </style>
     <?php endif; ?>
+    <style>
+        :root {
+            --bs-primary: <?= $tema_renk ?>;
+            --bs-primary-rgb: <?= implode(',', sscanf($tema_renk, "#%02x%02x%02x")) ?>;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--bs-primary);
+            color: white;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .sidebar .nav-link:hover {
+            color: white;
+        }
+        
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .content {
+            min-height: 100vh;
+            background-color: #f8f9fc;
+        }
+        
+        .navbar {
+            background-color: white;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .card {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        
+        .dropdown-menu {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1;
+            border-radius: 0.25rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Sidebar Toggle Button (Mobile) -->
@@ -60,11 +142,7 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
                 <li class="nav-item">
                     <a class="nav-link <?= $current_page == 'bildirimler.php' ? 'active' : '' ?>" href="bildirimler.php">
                         <i class="bi bi-bell"></i> Bildirimler
-                        <?php 
-                        require_once '../config.php';
-                        $okunmamis_bildirim_sayisi = okunmamisBildirimSayisi($db, $_SESSION['kullanici_id']);
-                        if ($okunmamis_bildirim_sayisi > 0): 
-                        ?>
+                        <?php if ($okunmamis_bildirim_sayisi > 0): ?>
                         <span class="badge rounded-pill bg-danger ms-1"><?= $okunmamis_bildirim_sayisi ?></span>
                         <?php endif; ?>
                     </a>
@@ -94,43 +172,27 @@ $current_page = basename($_SERVER['SCRIPT_NAME']);
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle position-relative" href="#" id="navbarDropdownNotif" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-bell"></i>
-                            <?php 
-                            if ($okunmamis_bildirim_sayisi > 0): 
-                            ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                <?= $okunmamis_bildirim_sayisi ?>
-                                <span class="visually-hidden">Okunmamış bildirimler</span>
-                            </span>
+                            <?php if ($okunmamis_bildirim_sayisi > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
+                                    <?= $okunmamis_bildirim_sayisi ?>
+                                    <span class="visually-hidden">Okunmamış bildirimler</span>
+                                </span>
                             <?php endif; ?>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <?php 
-                            $bildirimler_sql = "SELECT b.*, s.siparis_no
-                                              FROM bildirimler b
-                                              LEFT JOIN siparisler s ON b.ilgili_siparis_id = s.id
-                                              WHERE b.kullanici_id = ? AND b.okundu = 0
-                                              ORDER BY b.bildirim_tarihi DESC
-                                              LIMIT 5";
-                            $bildirimler_stmt = $db->prepare($bildirimler_sql);
-                            $bildirimler_stmt->execute([$_SESSION['kullanici_id']]);
-                            $bildirimler = $bildirimler_stmt->fetchAll(PDO::FETCH_ASSOC);
-                            
-                            if (count($bildirimler) > 0): 
-                                foreach ($bildirimler as $bildirim): 
-                            ?>
-                            <li>
-                                <a class="dropdown-item" href="bildirim_detay.php?id=<?= $bildirim['id'] ?>">
-                                    <small class="text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></small><br>
-                                    <?= guvenli($bildirim['mesaj']) ?>
-                                </a>
-                            </li>
-                            <?php 
-                                endforeach;
-                            ?>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimleri Gör</a></li>
+                            <?php if (empty($bildirimler)): ?>
+                                <li><span class="dropdown-item-text">Bildirim bulunmuyor</span></li>
                             <?php else: ?>
-                            <li><a class="dropdown-item text-center" href="#">Bildirim Yok</a></li>
+                                <?php foreach ($bildirimler as $bildirim): ?>
+                                    <li>
+                                        <a class="dropdown-item" href="siparis_detay.php?id=<?= $bildirim['ilgili_siparis_id'] ?>">
+                                            <small class="text-muted"><?= date('d.m.Y H:i', strtotime($bildirim['bildirim_tarihi'])) ?></small><br>
+                                            <?= guvenli($bildirim['bildirim_mesaji']) ?>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-center" href="bildirimler.php">Tüm Bildirimler</a></li>
                             <?php endif; ?>
                         </ul>
                     </li>
